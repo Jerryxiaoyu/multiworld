@@ -29,6 +29,9 @@ def register_pybullet_envs():
             table_name='white',
 
             # obj setting
+            isRandomObjects=False,
+            fixed_objects_init_pos = (0,-0.3,0.06,
+                                     0, -0.5, 0.06,),
             obj_name_list=['b_cube_m', 'b_cube_w', 'b_L1', 'b_L2',
                            'b_cube_m', 'b_cube_w', 'b_L1', 'b_L2'],
             num_movable_bodies=2,
@@ -46,7 +49,16 @@ def register_pybullet_envs():
             use_random_rgba=True,
             num_RespawnObjects=2,
 
-            # block area
+            # goal
+            isRandomGoals=False,
+            isIgnoreGoalCollision=False,
+            fixed_objects_goals= (-0.15,-0.3,0.06,
+                                  0.15, -0.5, 0.06,),
+            target_upper_space=(0.3, -0.40, 0.06),
+            target_lower_space=(-0.3, -0.45, 0.06),
+
+            random_target_position=False,
+            default_target_position=(0.0, -0.43, 0.115),
 
 
             # robot params
@@ -60,10 +72,7 @@ def register_pybullet_envs():
             initPos_lower_space=(-0.2, -0.6, 0.16),
             object_EulerOrn=(0, -math.pi / 2, math.pi / 2),
 
-            random_target_position=False,
-            default_target_position=(0.0, -0.43, 0.115),
-            # target_upper_space=(0.3, -0.40, 0.125),
-            # target_lower_space=(-0.3, -0.45, 0.125),
+
 
             image=False,
             render_params={
@@ -97,8 +106,7 @@ def register_pybullet_envs():
             actionRepeat=10,  # very importrant!!!
             maxSteps=1000,
             action_scale_conts=0.01,  #m
-            isRender=True,
-            debug=False,
+
             multi_view=False,
             isImageObservation=False,
 
@@ -117,6 +125,12 @@ def register_pybullet_envs():
             hand_high=(0 + 0.3, -0.40 + 0.2, 0.4),
             hand_low=(0 - 0.3, -0.40 - 0.2, -0.4),
             useDynamics=True,
+
+
+            # debug setting
+            isRenderGoal=True,
+            isRender=True,
+            debug=False,
 
         )
     )

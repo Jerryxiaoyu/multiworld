@@ -15,7 +15,12 @@ from .base import Jaco2XYZEnv
 
 from multiworld.core.serializable import Serializable
 import copy
+from collections import OrderedDict
+from multiworld.envs.env_util import (
+    get_stat_in_paths,
+    create_stats_ordered_dict,
 
+)
 from multiworld.core.multitask_env import MultitaskEnv
 from gym.spaces import Box, Dict
 
@@ -71,58 +76,63 @@ __all__ = [ 'Jaco2BlockPusherXYZ']
 
 class Jaco2BlockPusherXYZ(Jaco2XYZEnv,   MultitaskEnv):
     def __init__(self,
-                 random_init_object_position= True,
-                 random_target_position = False,
-                 default_target_position = DEFAULT_TARGET_POS,
-
-
-                 obj_name_list=[],
-                 num_movable_bodies=3,
-
-
+                 # target
+                 isRandomGoals=True,
+                 isIgnoreGoalCollision = False,
+                 fixed_objects_goals =[],
                  target_upper_space=(0.2, -0.75, 0.25),
                  target_lower_space=(-0.2, -0.85, 0.25),
+
+                 #obj
+                 obj_name_list=[],
+                 num_movable_bodies=3,
+                 isRandomObjects = True,
+                 fixed_objects_init_pos=[],
+
+                 # other
                  initPos_upper_space=(0.2, -0.45, 0.25),
                  initPos_lower_space=(-0.2, -0.55, 0.25),
-                 default_init_position = OBJECT_DEFALUT_POSITION,
-                 object_EulerOrn = (0, -math.pi/2,  math.pi/2),
-
 
                  reward_mode=0,
+                 isRenderGoal = True,
 
                 # render_params=DEFAULT_RENDER,
                  **kwargs):
-        # objects
+        # import objects & init pos
         self.num_objects = num_movable_bodies
-        self.objects_env = Objects(obj_name_list, num_movable_bodies, **kwargs)
 
-        isRandomGoals = True
-        isIgnoreGoalCollision = False
-        # goal
-        self._isRandomGoals  = isRandomGoals
+        self._isRandomObjects = isRandomObjects
+        if self._isRandomObjects:
+            obj_fixed_poses = None
+        else:
+            obj_fixed_poses=[]
+            assert len(fixed_objects_init_pos) == self.num_objects * 3
+            for i in range(self.num_objects):
+                obj_fixed_poses.append(Pose([fixed_objects_init_pos[i*3:i*3+3],[0,0,0]]))
+        self.objects_env = Objects(obj_name_list, num_movable_bodies,is_fixed = (not isRandomObjects),
+                                   obj_fixed_poses = obj_fixed_poses, **kwargs)
 
+
+        # goal setting
+        self._isRandomGoals = isRandomGoals
         self._isIgnoreGoalCollision = isIgnoreGoalCollision
-        self.fixed_objects_goals = []
-
-
-
-        self._default_target_positon = list(default_target_position)
-
-
+        self.fixed_objects_goals = fixed_objects_goals
         self._target_upper_space = target_upper_space
         self._target_lower_space = target_lower_space
 
+        self._isRenderGoal = isRenderGoal
+        if self._isRenderGoal:
+            self.goal_render_env = Objects(['ball_visual'], num_movable_bodies ,
+                                           obj_scale_range=(0.02, 0.02),
+                                           use_random_rgba=True,
+                                           num_RespawnObjects=None,
+                                           is_fixed=True,
+                                          )
+
+
+
         self._initPos_lower_space = initPos_lower_space
         self._initPos_upper_space = initPos_upper_space
-
-        self.goal_point = list(default_target_position)
-
-
-
-        self._random_init_cup_position = random_init_object_position
-        self._default_init_position = default_init_position
-        self._object_EulerOrn = object_EulerOrn
-
 
         if os.getenv('REWARD_CHOICE') is not None:
             self.reward_mode = int(os.getenv('REWARD_CHOICE'))
@@ -157,8 +167,13 @@ class Jaco2BlockPusherXYZ(Jaco2XYZEnv,   MultitaskEnv):
         self.objects_env.reset()
 
         self.state_goal = self.sample_goal_for_rollout()
-        self._isRenderGoal = True
+
         if self._isRenderGoal:
+            movable_poses = []
+            for i in range(self.num_objects):
+                pose = Pose([self.state_goal[i*3:i*3+3],  (0,0,0)])
+                movable_poses.append(pose)
+            self.goal_render_env.reset(movable_poses)
 
         return  self._get_obs()
 
@@ -174,7 +189,8 @@ class Jaco2BlockPusherXYZ(Jaco2XYZEnv,   MultitaskEnv):
         g = self.state_goal
 
         new_obs = dict(
-            observation=x,          # end-effector
+            observation=e,          # end-effector
+            objects_positions =b,   # objects
             state_observation=x,    # end_effector & obj positions
             desired_goal=g,         # desired goal
             state_desired_goal=g,   # desired goal
@@ -184,23 +200,64 @@ class Jaco2BlockPusherXYZ(Jaco2XYZEnv,   MultitaskEnv):
         return new_obs
 
     def _get_info(self):
-        end_effector_pose = self.robot.GetEndEffectorObersavations()
-        return {"end_effector":end_effector_pose}
+        ee_pos, ee_orn = self.robot.GetEndEffectorObersavations()
+
+        object_distances = {}
+        touch_distances = {}
+        for i in range(self.num_objects):
+            object_name = "object%d_distance" % i
+            object_distance = np.linalg.norm(
+                self.get_object_goal_pos(i) - self.get_object_pos(i)
+            )
+            object_distances[object_name] = object_distance
+            touch_name = "touch%d_distance" % i
+            touch_distance = np.linalg.norm(
+                ee_pos - self.get_object_pos(i)
+            )
+            touch_distances[touch_name] = touch_distance
+        info = dict(
+
+            success=float(  sum(object_distances.values()) < 0.05),
+            **object_distances,
+            **touch_distances,
+        )
+
+        return info
 
     def _reward(self, obs, action, others=None):
-        torque = self.robot.GetMotorTorques()
-
-        dist = 0
-
-        if self.reward_mode == 0:
-            reward_dist = -np.square(dist).sum()
-            reward_ctrl = -np.linalg.norm(torque) * 0.0001
-            reward = reward_dist + reward_ctrl
-        else:
-            raise NotImplementedError
+        reward = self.compute_reward(action, obs)
 
         return reward
 
+
+    def log_diagnostics(self, paths, logger=None, prefix=""):
+        if logger is None:
+            return
+
+        statistics = OrderedDict()
+        for stat_name in [
+            'hand_distance',
+            'success',
+        ] + [
+            "object%d_distance" % i for i in range(self.num_objects)
+        ] + [
+            "touch%d_distance" % i for i in range(self.num_objects)
+        ]:
+            stat_name = stat_name
+            stat = get_stat_in_paths(paths, 'env_infos', stat_name)
+            statistics.update(create_stats_ordered_dict(
+                '%s %s' % (prefix, stat_name),
+                stat,
+                always_show_all_stats=True,
+            ))
+            statistics.update(create_stats_ordered_dict(
+                'Final %s %s' % (prefix, stat_name),
+                [s[-1] for s in stat],
+                always_show_all_stats=True,
+            ))
+
+        for key, value in statistics.items():
+            logger.record_tabular(key, value)
 
     # multi task
     @property
@@ -224,9 +281,22 @@ class Jaco2BlockPusherXYZ(Jaco2XYZEnv,   MultitaskEnv):
             'state_desired_goal': self.state_goal,
         }
 
+    def get_object_goal_pos(self, i):
+        x = 0 + 3 * i
+        y = 3 + 3 * i
+        return self.state_goal[x:y]
+
+    def get_object_pos(self, i):
+        return self.movable_bodies[i].position
+
     def compute_rewards(self, action, obs, info=None):
-        r = -np.linalg.norm(obs['state_achieved_goal'] - obs['state_desired_goal'], axis=1)
+        r = -np.linalg.norm(obs['objects_positions'] - obs['state_desired_goal'], axis=1)
         return r
+
+    def compute_reward(self, action, obs, info=None):
+        r = -np.linalg.norm(obs['objects_positions'] - obs['state_desired_goal'])
+        return r
+
 
     def set_goal(self, goal):
         self.state_goal = goal['state_desired_goal']
@@ -235,7 +305,7 @@ class Jaco2BlockPusherXYZ(Jaco2XYZEnv,   MultitaskEnv):
     def sample_goal_for_rollout(self):
         if self._isRandomGoals:
             if not self._isIgnoreGoalCollision:
-                poses_list = self.objects_env._sample_body_poses( self.num_objects)
+                poses_list = self.objects_env._sample_body_poses(self.num_objects)
                 pos = []
                 for pose in poses_list:
                     pos.append(pose.position)
@@ -245,13 +315,12 @@ class Jaco2BlockPusherXYZ(Jaco2XYZEnv,   MultitaskEnv):
 
                 goals = np.concatenate([np.random.uniform(self._target_lower_space, self._target_upper_space) for i in range(self.num_objects)])
         else:
-
-            goals = self.fixed_objects_goals.copy()
-
-
+            assert len(self.fixed_objects_goals) == self.num_objects * 3, "shape (3n, )"
+            goals = np.array(self.fixed_objects_goals).copy()
         return goals
 
     def set_to_goal(self, goal):
+        raise NotImplementedError
         state_goal = goal['state_desired_goal']
         self.set_hand_xy(state_goal[:2])
         for i in range(self.num_objects):

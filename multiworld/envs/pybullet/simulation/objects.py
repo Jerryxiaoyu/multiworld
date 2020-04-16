@@ -41,6 +41,9 @@ OBJECTS_DICT = {
 'b_L1':     ["objects/blocks/block_L1.urdf",(0,0,0), []],
 'b_L2':     ["objects/blocks/block_L2.urdf",(0,0,0), []],
 
+
+'ball_visual': ["objects/balls/ball_visual.urdf",(0,0,0), []],
+
 }
 def get_config_value(config):
     """Get the value of an configuration item.
@@ -64,6 +67,8 @@ class Objects(object):
 
                  obj_name_list,
                  num_movable_bodies,
+                 is_fixed=False,
+                 obj_fixed_poses =[],
                  obj_pos_upper_space=(0.2, -0.45, 0.20),
                  obj_pos_lower_space=(-0.2, -0.55, 0.20),
                  obj_max_upper_space=(0 + 0.3, -0.40 + 0.2, 0.4),
@@ -75,8 +80,8 @@ class Objects(object):
                  obj_mass=None,
                  obj_friction=None,
                  use_random_rgba=False,
-                 num_RespawnObjects=2,
-                 is_fixed=False,
+                 num_RespawnObjects=None,
+
                   **kwargs
                     ):
         self._p = p
@@ -100,12 +105,14 @@ class Objects(object):
         self.movable_bodies = []
         self._num_RespawnObjects = num_RespawnObjects
 
+        self.is_fixed=is_fixed
+        self.OBJ_FIXED_POSES = obj_fixed_poses
+
 
 
     def _load_movable_objects(self):
         """Load movable bodies."""
-
-        if self._reset_counter >= self._num_RespawnObjects:
+        if self._num_RespawnObjects is not None and self._reset_counter >= self._num_RespawnObjects:
             # delete all the blocks
             for body in self.movable_bodies:
                 body.remove_body()
@@ -210,14 +217,74 @@ class Objects(object):
 
         return movable_poses
 
-    def _reset_movable_obecjts(self):
-        movable_poses = self._sample_body_poses(self.NUM_MOVABLE_BODIES)
+    def _reset_movable_obecjts(self, movable_poses=None):
+        if movable_poses is None:
+            movable_poses = self._sample_body_poses(self.NUM_MOVABLE_BODIES)
         for i, body in enumerate(self.movable_bodies):
             # update pose.
             body.pose= movable_poses[i]
 
-    def reset(self):
-        self._load_movable_objects()
+    def _load_movable_fixed_objects(self, movable_poses):
+        """Load movable bodies."""
+        if self._num_RespawnObjects is not None and self._reset_counter >= self._num_RespawnObjects:
+            # delete all the blocks
+            for body in self.movable_bodies:
+                body.remove_body()
+            self.movable_bodies = []
+
+        assert movable_poses is not None
+
+        if len(self.movable_bodies) == 0:
+            self.target_movable_paths = []
+            for obj_name in self.OBJ_NAME_LIST:
+                if not os.path.isabs(obj_name):
+                    file_path = os.path.join(ROBOT_URDF_PATH, OBJECTS_DICT[obj_name][0])
+                else:
+                    file_path = obj_name
+                self.target_movable_paths += glob.glob(file_path)
+            assert len(self.target_movable_paths) > 0
+
+
+            for i in range(self.NUM_MOVABLE_BODIES):
+
+                urdf_path = random.choice(self.target_movable_paths)
+
+                pose = movable_poses[i]
+                scale = np.random.uniform(*self.OBJ_SCALE_RANGE)
+                name = 'movable_%d' % i
+
+                # Add object.
+                obj_body = Body(self._p, urdf_path, pose, scale=scale, name=name)
+
+                if self.USE_RANDOM_RGBA:
+                    r = np.random.uniform(0., 1.)
+                    g = np.random.uniform(0., 1.)
+                    b = np.random.uniform(0., 1.)
+                    obj_body.set_color(rgba=[r, g, b, 1.0], specular=[0, 0, 0])
+
+                mass = get_config_value(self.OBJ_MASS)
+                lateral_friction = get_config_value(self.OBJ_FRICTION)
+                obj_body.set_dynamics(
+                    mass=mass,
+                    lateral_friction=lateral_friction,
+                    rolling_friction=None,
+                    spinning_friction=None)
+
+                self.movable_bodies.append(obj_body)
+            self._reset_counter = 0
+        self._reset_counter += 1
+
+        self._reset_movable_obecjts(movable_poses)
+
+    def reset(self, movable_poses=None):
+        if self.is_fixed:
+            if movable_poses is None:
+                assert len(self.OBJ_FIXED_POSES) == self.num_objects
+                movable_poses = self.OBJ_FIXED_POSES
+            self._load_movable_fixed_objects(movable_poses)
+        else:
+            self._load_movable_objects()
+
 
 
 
