@@ -1,0 +1,57 @@
+<?xml version="1.0" ?>
+<robot name="ball">
+    <material name="light_gold">
+        <color rgba="0.9333333333333333 0.8627450980392157 0.5098039215686274 1"/>
+    </material>
+    <material name="gray">
+        <color rgba="0.7450980392156863 0.7450980392156863 0.7450980392156863 1"/>
+    </material>
+    <material name="red">
+        <color rgba="1 0 0 1"/>
+    </material>
+    <material name="orange">
+        <color rgba="1 0.647058823 0 1"/>
+    </material>
+     <material name="yellow">
+        <color rgba="1 1 0 1"/>
+    </material>
+    <material name="green">
+        <color rgba="0 0.9803921 0.603921   1"/>
+    </material>
+
+    <material name="blue">
+        <color rgba="0.52941176 0.807843 1   1"/>
+    </material>
+    <material name="purple">
+        <color rgba="0.698 0.2274509 0.933333   1"/>
+    </material>
+
+
+  <link name="ballLink">
+    <contact>
+      <lateral_friction value="1"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.000011 0.000035 -0.000027"/>
+       <mass value="0.04819"/>
+       <inertia ixx="0.00000002510" ixy="-0.00000000004" ixz="0.00000000001" iyy="0.00000001569" iyz="0.00000000001" izz="0.00000001564"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+			<mesh filename="meshes/2.obj" scale="1 1 1"/>
+      </geometry>
+        <material name="green"/>
+    </visual>
+    <collision>
+    <origin rpy="0 0 0" xyz="0 0 0. "/>
+      <geometry>
+            <mesh filename="meshes/2.obj" scale="1 1 1"/>
+      </geometry>
+    </collision>
+  </link>
+</robot>
+
+
+
+

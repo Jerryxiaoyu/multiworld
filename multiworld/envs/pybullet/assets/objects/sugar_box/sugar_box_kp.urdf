@@ -1,0 +1,102 @@
+<?xml version="1.0" ?>
+<robot name="Sugar_box">
+
+  <link name="Link">
+
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.007799 -0.016942 0.087678"/>
+       <mass value="0.5"/>
+       <inertia ixx="0.000002" ixy="0" ixz="0"
+                iyy="0.000002" iyz="0"
+                izz="0.000001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+           <mesh filename="textured2.obj" scale="1 1 1"/>
+      </geometry>
+      <material name="framemat0">
+        <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+	 	 <mesh filename="textured2.obj" scale="1 1 1"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="keypoint1">
+        <inertial>
+            <origin rpy="0 0 0" xyz="0.01267 -0.06182 0.002894"/>
+            <mass value="0.001"/>
+            <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
+        </inertial>
+        <visual>
+            <origin rpy="0.00000 -0.00000 0.00000" xyz="0.01267 -0.06182 0.002894"/>
+            <geometry>
+                <sphere radius="0.005"/>
+            </geometry>
+
+
+            <material name="keypoints1">
+             <color rgba="1 0 0 1"/>
+              </material>
+        </visual>
+    </link>
+    <link name="keypoint2">
+        <inertial>
+            <origin rpy="0 0 0" xyz="0.002546 -0.058889 0.174045"/>
+            <mass value="0.001"/>
+            <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
+        </inertial>
+        <visual>
+            <origin rpy="0.00000 -0.00000 0.00000" xyz="0.002546 -0.058889 0.174045"/>
+            <geometry>
+                <sphere radius="0.005"/>
+            </geometry>
+             <material name="keypoints2">
+             <color rgba="0 1 0 1"/>
+              </material>
+        </visual>
+    </link>
+    <link name="keypoint3">
+        <inertial>
+            <origin rpy="0 0 0" xyz="-0.028748 0.027729 0.172607"/>
+            <mass value="0.001"/>
+            <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
+        </inertial>
+        <visual>
+            <origin rpy="0.00000 -0.00000 0.00000" xyz="-0.028748 0.027729 0.172607"/>
+            <geometry>
+                <sphere radius="0.005"/>
+            </geometry>
+             <material name="keypoints3">
+             <color rgba="0 0 1 1"/>
+              </material>
+        </visual>
+    </link>
+
+    <joint name="joint_kp1" type="fixed">
+        <parent link="Link"/>
+        <child link="keypoint1"/>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <axis xyz="0 0 0"/>
+        <dynamics damping="1.0" friction="0.0001"/>
+    </joint>
+    <joint name="joint_kp2" type="fixed">
+        <parent link="Link"/>
+        <child link="keypoint2"/>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <axis xyz="0 0 0"/>
+        <dynamics damping="1.0" friction="0.0001"/>
+    </joint>
+    <joint name="joint_kp3" type="fixed">
+        <parent link="Link"/>
+        <child link="keypoint3"/>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <axis xyz="0 0 0"/>
+        <dynamics damping="1.0" friction="0.0001"/>
+    </joint>
+</robot>
+
