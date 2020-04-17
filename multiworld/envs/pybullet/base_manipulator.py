@@ -39,6 +39,8 @@ from multiworld.envs.env_util import (
 import copy
 
 from multiworld.core.multitask_env import MultitaskEnv
+from .util.bullet_camera import create_camera
+
 
 DEFAULT_RENDER = {
 "target_pos": (0.32, 0.1, -0.00),
@@ -48,28 +50,25 @@ DEFAULT_RENDER = {
 "roll": 0,
 }
 
-DEFAULT_CAMERA =  {"target_pos": (0.0, -0.735, -0.105),
-                    "distance": 1.158,
-                    "yaw": 174.7,
-                    "pitch": -64.4,
-                    "roll": 0,
-                   "fov":60,
-                   "near":0.1,
-                   "far":100.0,
-                   "image_width":640,
-                   "image_height":480,}
+DEFAULT_CAMERA =  {"target_pos": (0.0, -0.461, -0.004),
+                   "distance": 1,
+                   "yaw": 0,
+                   "pitch": -63.684,
+                   "roll": 0,
+                   "fov": 60,
+                   "near": 0.1,
+                   "far": 100.0,
+                   "image_width": 640,
+                   "image_height": 480,
+                   'intrinsics': [610.911, 0., 321.936, 0., 611.021, 236.665, 0., 0., 1.],
+                   'translation': None,
+                   'rotation': None,
 
-MULTI_CAMERA2 =  {"target_pos": (0.0, -0.735, -0.105),
-                    "distance": 1.158,
-                    "yaw": 174.7,
-                    "pitch": -64.4,
-                    "roll": 0,
-                   "fov":60,
-                   "near":0.1,
-                   "far":100.0,
-                   "image_width":640,
-                   "image_height":480,
-                                }
+                   # camera in world pose Twc
+                   'camera_pose': {'translation': [0.0, -0.4, 0.75],
+                                   'rotation': [-math.pi, 0, 0], },  # upright
+                   }
+
 
 UNIT_ACTION_DESCRETE = 0.002
 ACTION_SCALE_CONTINUOUS = 0.002
@@ -157,14 +156,14 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable, metaclass=abc.ABCMeta):
                  hard_reset=False,
 
                  # camera & image info
-                 isImageObservation =   True,
-                 multi_view         =   False,
+
                  camera_params      =   DEFAULT_CAMERA,
                  shadow_enable      =   False,              # Bool, enable shadow in an image
                  isImgMask          =   False,              # Bool, if to enable mask mode
+                 isImgDepth         =   False,              # Bool, if to enable depth mode
 
                  # render setting
-                 tinyRender_enable  =   False,              # Bool, default(False): use hardware opengl
+                 opengl_Render_enable  =   True,              # Bool, default(True): use hardware opengl
                  render_params      =   DEFAULT_RENDER,
 
                  # robot setting
@@ -177,10 +176,11 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable, metaclass=abc.ABCMeta):
                  robotHomeAngle =   ROBOT_HOME_ANGLE,       # robot initial joint angle (n,), n is Dof of the robot
                  fixed_finger   =   FIXED_FINGER_ANGLE,     # robot initial fingle angel, scalor
                  random_robot_ee_pos = False,               # Bool, if to randomize end-effector pose in a specified space
-                 hand_init_upper_space  =   (0, 0, 0),
-                 hand_init_lower_space  =   (0, 0, 0),
-                 hand_low               =   (0. - 0.22, -0.43 - 0.22, 0.1),
-                 hand_high              =   (0. + 0.22, -0.43 + 0.22, 0.4),
+                 hand_init_upper_space  =   (0, 0, 0),      # random sample space for robot initialization
+                 hand_init_lower_space  =   (0, 0, 0),      # random sample space for robot initialization
+
+                 hand_high              =   (0.22, -0.2,  0.4), # robot work space
+                 hand_low               =   (-0.22, -0.6, 0.0), # robot work space
 
                  # env setting
                  default_plane_pos      = (0,0,-1),
@@ -241,15 +241,16 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable, metaclass=abc.ABCMeta):
 
         self._custom_light = False
 
-        self._multi_view = multi_view
-        self._isImageObservation = isImageObservation
+
         self._isImgMask = isImgMask
+        self._isImgDepth = isImgDepth
         self._mask_flags = self._p.ER_SEGMENTATION_MASK_OBJECT_AND_LINKINDEX if self._isImgMask else self._p.ER_NO_SEGMENTATION_MASK
 
         self._stepTextPosition = stepTextPosition
 
         self.camera_params= camera_params
-        self.renderer = self._p.ER_TINY_RENDERER if tinyRender_enable else self._p.ER_BULLET_HARDWARE_OPENGL    #p.ER_TINY_RENDERER  #p.ER_BULLET_HARDWARE_OPENGL  #
+        self._opengl_Render_enable = opengl_Render_enable
+        self.renderer = self._p.ER_BULLET_HARDWARE_OPENGL if opengl_Render_enable else  self._p.ER_TINY_RENDERER   #p.ER_TINY_RENDERER  #p.ER_BULLET_HARDWARE_OPENGL  #
         self._render_params = render_params
         self._shadow_flag = 1 if shadow_enable else 0
 
@@ -320,16 +321,38 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable, metaclass=abc.ABCMeta):
         self._hard_reset = True
 
         ## 2. set camera
-        self.cameraC0 = pybullet_camera(self._p, self.camera_params)
+        self.initialize_camera(self.camera_params)
 
-        if self._multi_view:
-            self.cameraC1 = pybullet_camera(self._p, self.camera_params)
 
         ## 3. set light
         if self._custom_light:
             light_x = np.random.uniform(-3, 3)
             light_y = np.random.uniform(1, 3)
             self._p.configureDebugVisualizer(lightPosition=[light_x, light_y, 3])
+
+    def initialize_camera(self, camera_params):
+
+        self.camera = create_camera(self._p,
+                                     camera_params['image_height'],
+                                     camera_params['image_width'],
+                                     camera_params['intrinsics'],
+                                     camera_params['translation'],
+                                     camera_params['rotation'],
+                                     near= camera_params['near'],
+                                     far= camera_params['far'],
+                                     distance= camera_params['distance'],
+                                     camera_pose= camera_params['camera_pose'],
+
+                                     isImgDepth=False,
+                                     isImgMask=self._isImgMask,
+                                     shadow_enable=self._shadow_flag,
+                                     opengl_Render_enable=self._opengl_Render_enable,
+
+                                    is_simulation=True)
+        self._image_width = camera_params['image_width']
+        self._image_height = camera_params['image_height']
+
+
 
     def plot_boundary(self):
 
@@ -668,53 +691,32 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable, metaclass=abc.ABCMeta):
         :param close:
         :return: rgb image (height, width, 3)
         """
-        if mode != "rgb_array":
-            return np.array([])
-        #t1 = time.time()
-        if self._debug:
-            camera_params =  self.camera_params
-            camera_params["target_pos"] = (self._p.readUserDebugParameter(self.x_slider),
-                                           self._p.readUserDebugParameter(self.y_slider),
-                                           self._p.readUserDebugParameter(self.z_slider))
-            camera_params["distance"] = self._p.readUserDebugParameter(self.dist_slider)
-            camera_params["yaw"] = self._p.readUserDebugParameter(self.yaw_slider)
-            camera_params["pitch"] = self._p.readUserDebugParameter(self.pitch_slider)
+        pass
 
-            self.cameraC0 = pybullet_camera(self._p, camera_params)
+    def get_image(self, width=84, height=84, mode='rgb'):
 
-        (_, _, rgba, depth, segmask) = self._p.getCameraImage(width=self.cameraC0.width, height=self.cameraC0.height,
-                                                               viewMatrix=self.cameraC0.view_matrix_list, projectionMatrix=self.cameraC0.proj_matrix_list,
-                                                               renderer= self.renderer , shadow = self._shadow_flag, flags=self._mask_flags,)
-        #t2 = time.time()
+        images = self.camera.frames()
 
+        if mode =='rgb':
+            if width != self.image_width or height != self.image_height:
+                return cv2.resize(images['rgb'], (height, width), interpolation=cv2.INTER_NEAREST)
+            else:
+                return images['rgb']
+        elif mode =='rgbd':
+            return {
+                'rgb': images['rgb'],
+                'depth': images['depth'],
 
-        rgba = np.array(rgba).astype('uint8')
-        rgb = rgba[:, :, :3]
-
-        if self._multi_view:
-            raise  NotImplementedError
-            # adding a second camera on the other side of the robot
-            (_, _, px2, _, _) = self._p.getCameraImage(width=self._image_width, height=self._image_height, viewMatrix=self.view_matrix2,
-                                                    projectionMatrix=self.proj_matrix2, renderer=self.renderer)
-            rgb_array2 = np.array(px2)
-            rgb_array_res = np.concatenate((rgb_array1[:, :, :3], rgb_array2[:, :, :3]), axis=2)
-
-
-        #print('img time :', t2 - t1)
-
-        if not result_full:
-            return rgb
-        else:
-            depth = np.array(depth).astype('float32')
-            segmask = np.array(segmask).astype('uint8')
-
-            img_depth = self.cameraC0.get_depth_image_from_buffer(depth)
-
-            return  {
-             'rgb': rgb_array_res,
-             'depth':img_depth,
-             'segmask':segmask
             }
+        elif mode == 'rgbd-seg':
+            return {
+                'rgb': images['rgb'],
+                'depth':images['depth'],
+                'segmask':images['segmask']
+            }
+
+        else:
+            raise NotImplementedError
 
     @property
     def start_range(self):
@@ -729,5 +731,12 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable, metaclass=abc.ABCMeta):
         end effector offset wrt Catisian, [x,y,z]
         """
         return (self._hand_init_high + self._hand_init_low)/2.
+
+    @property
+    def image_width(self):
+        return self._image_width
+    @property
+    def image_height(self):
+        return self._image_height
 
 

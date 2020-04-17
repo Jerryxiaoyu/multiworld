@@ -5,15 +5,15 @@ import numpy as np
 import cv2
 multiworld.register_all_envs()
 
-from multiworld.envs.mujoco.sawyer_xyz.sawyer_multiple_objects import MultiSawyerEnv
+
+from multiworld.envs.pybullet import create_image_pybullet_jaco_push_primitive_xy_env_v1
 from multiworld.envs.mujoco import create_image_48_sawyer_reach_xy_env_v1
 
+#env = gym.make("Jaco2ObjectsPusherXYEnv-v0" )
 
-env = gym.make("Jaco2ObjectsPusherXYEnv-v0" )
 
-
-#env = MultiSawyerEnv()
-
+env = create_image_pybullet_jaco_push_primitive_xy_env_v1()
+#env = create_image_48_sawyer_reach_xy_env_v1()
 obs = env.reset()
 
 print("obs:", env.observation_space.shape)

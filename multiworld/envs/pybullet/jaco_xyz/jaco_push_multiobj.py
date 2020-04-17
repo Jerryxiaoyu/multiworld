@@ -28,46 +28,7 @@ DEFAULT_TARGET_POS = (-0.15, -0.75, 0.25)
 OBJECT_DEFALUT_POSITION = (0.05, -0.45, 0.25)
 
 
-"""
-box area:
-x[-0.25, 0.25 0.13]
-y[-0.65, -0.15 0.13]
-"""
-DEFAULT_RENDER = {
-"target_pos": (0, -0.842, 0.842),
- "distance": 0.25,
-"yaw": 0,
-"pitch": -43,
-"roll": 0,
-}
 
-OBJECT_URDF_LISTS=[
- "objects/blocks/block_column.urdf",
-# "objects/blocks/block_cube_m.urdf",
-# "objects/blocks/block_cube_w.urdf",
-# "objects/blocks/block_cuboid.urdf",
-# "objects/blocks/block_cuboid2.urdf",
-# "objects/blocks/block_L1.urdf",
-# "objects/blocks/block_L2.urdf",
-# "objects/blocks/block_semi_column.urdf",
-# "objects/blocks/block_triangle.urdf",
-
-# "objects/blocks/block_semi_hole.urdf",
-# "objects/blocks/block_semi_hole_ext.urdf",
-    
-# "YCB/002_master_chef_can/master_chef.urdf",
-# "YCB/004_sugar_box/sugar_box.urdf",
-# "YCB/005_tomato_soup_can/tomato_soup_can.urdf",
-# "YCB/008_pudding_box/pudding_box.urdf",
-# "YCB/010_potted_meat_can/potted_meat_can.urdf",
-# "YCB/011_banana/banana.urdf",
-# "YCB/013_apple/apple.urdf",
-#
-# "YCB/006_mustard_bottle/mustard_bottle.urdf",
-
-#"YCB/007_tuna_fish_can
-
-]
 from multiworld.math import Pose
 from ..simulation.body import Body
 from ..simulation.objects import Objects
@@ -193,7 +154,7 @@ class Jaco2BlockPusherXYZ(Jaco2XYZEnv,   MultitaskEnv):
             objects_positions =b,   # objects
             state_observation=x,    # end_effector & obj positions
             desired_goal=g,         # desired goal
-            state_desired_goal=g,   # desired goal
+            state_desired_goal=g,   # desired ee and obj goal
 
         )
 
@@ -216,7 +177,7 @@ class Jaco2BlockPusherXYZ(Jaco2XYZEnv,   MultitaskEnv):
             )
             touch_distances[touch_name] = touch_distance
         info = dict(
-
+            end_effector=[ee_pos, ee_orn],
             success=float(  sum(object_distances.values()) < 0.05),
             **object_distances,
             **touch_distances,
@@ -319,11 +280,27 @@ class Jaco2BlockPusherXYZ(Jaco2XYZEnv,   MultitaskEnv):
             goals = np.array(self.fixed_objects_goals).copy()
         return goals
 
+
     def set_to_goal(self, goal):
-        raise NotImplementedError
+
         state_goal = goal['state_desired_goal']
-        self.set_hand_xy(state_goal[:2])
+        object_poses =[]
         for i in range(self.num_objects):
-            x = 2 + 2 * i
-            y = 4 + 2 * i
-            self.set_object_xy(i, state_goal[x:y])
+            object_poses.append(Pose([state_goal[i*3:i*3+3],[0,0,0]]))
+        self.objects_env._reset_movable_obecjts(object_poses)
+
+
+    def get_env_state(self):
+        # get robot states
+        joint_state = self.robot.GetTrueMotorAngles()
+        # get object states
+        object_state = [x.pose for x in self.movable_bodies]
+
+        state = joint_state, object_state
+        return copy.deepcopy(state)
+
+    def set_env_state(self, state):
+        joint_state, object_state = state
+        self.robot._ResetJointState(joint_state)
+        self.objects_env._reset_movable_obecjts(object_state)
+

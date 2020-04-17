@@ -28,5 +28,9 @@ class BasePybulletEnv(gym.Env):
     def ncam(self):
         return self._ncam
 
+    @property
+    def isPybulletEnv(self):
+        return True
+
 
 

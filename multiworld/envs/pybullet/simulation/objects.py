@@ -283,6 +283,7 @@ class Objects(object):
                 movable_poses = self.OBJ_FIXED_POSES
             self._load_movable_fixed_objects(movable_poses)
         else:
+
             self._load_movable_objects()
 
 
