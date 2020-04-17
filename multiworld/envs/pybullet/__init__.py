@@ -29,11 +29,11 @@ def register_pybullet_envs():
 
             # obj setting
             isRandomObjects=False,
-            fixed_objects_init_pos = (0, -0.3, 0.06,       # shape (3*n,)
-                                      0, -0.5, 0.06,),
+            fixed_objects_init_pos = (0, -0.3, 0.06,),       # shape (3*n,)
+                                      #0, -0.5, 0.06,),
             obj_name_list=['b_cube_m', 'b_cube_w', 'b_L1', 'b_L2',
                            'b_cube_m', 'b_cube_w', 'b_L1', 'b_L2'],
-            num_movable_bodies=2,
+            num_movable_bodies=1,
             obj_pos_upper_space=(0 + 0.25, -0.40 + 0.15, 0.06),
             obj_pos_lower_space=(0 - 0.25, -0.40 - 0.15, 0.06),
             obj_max_upper_space=(0 + 0.3, -0.40 + 0.2, 0.4),
@@ -46,13 +46,13 @@ def register_pybullet_envs():
             obj_mass=None,
             obj_friction=0.8,
             use_random_rgba=True,
-            num_RespawnObjects=2,
+            num_RespawnObjects=5,
 
             # goal
             isRandomGoals=True,
             isIgnoreGoalCollision=False,
-            fixed_objects_goals= (-0.15,-0.3,0.06,
-                                  0.15, -0.5, 0.06,), # shape (3*n,)
+            fixed_objects_goals= (-0.15,-0.3,0.06,),
+                                  #0.15, -0.5, 0.06,), # shape (3*n,)
             target_upper_space=(0.3, -0.40, 0.06),
             target_lower_space=(-0.3, -0.45, 0.06),
 
@@ -72,11 +72,12 @@ def register_pybullet_envs():
             kinova_type='j2s7s300_beam',
             control_mode='pos_consXY',
 
-            ## 10s traj horizon
+            ## 30s traj horizon
+            ## action control rate: 1s
             timeStep=0.01,
-            actionRepeat=10,  # very importrant!!!
-            maxSteps=1000,
-            action_scale_conts=0.01,  #m
+            actionRepeat=100,  # very importrant!!!
+            maxSteps=3000,
+            action_scale_conts=0.1,  #m
 
             robotHomeAngle= (4.800, 2.947, -0.253, 0.842, 0.000, 4.211, 0.505, 1.263, 1.347, 1.347),
             robot_ee_pos=   (0.02, -0.25,  0.15),
@@ -107,10 +108,6 @@ def register_pybullet_envs():
 
         )
     )
-
-
-
-
 
 def create_image_pybullet_jaco_push_primitive_xy_env_v1():
     from multiworld.core.image_env import ImageEnv

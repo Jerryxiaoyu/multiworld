@@ -12,9 +12,9 @@ from multiworld.envs.mujoco import create_image_48_sawyer_reach_xy_env_v1
 # SawyerPushAndReachSmallArenaEnv-v0
 # SawyerPickupEnv-v0
 
-env = gym.make("SawyerReachXYEnv-v1" )
+env = gym.make("SawyerPushNIPSEasy-v0" )
 
-env = create_image_48_sawyer_reach_xy_env_v1()
+#env = create_image_48_sawyer_reach_xy_env_v1()
 #env = MultiSawyerEnv()
 
 obs = env.reset()
