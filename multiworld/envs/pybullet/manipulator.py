@@ -911,7 +911,7 @@ class Manipulator:
           self._SetDesiredMotorAngleById(motor_id, jointPose[i])
 
   def check_ee_reached(self):
-    END_EFFECTOR_POS_THRESHOLD = 0.008
+    END_EFFECTOR_POS_THRESHOLD = 0.01
 
     current_pose = self.end_effector_Pose
 

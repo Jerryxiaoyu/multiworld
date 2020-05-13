@@ -3,20 +3,24 @@ import gym
 import os
 import numpy as np
 import cv2
-multiworld.register_all_envs()
+multiworld.register_pybullet_envs()
 
 
 from multiworld.envs.pybullet import create_image_pybullet_jaco_push_primitive_xy_env_v1
 from multiworld.envs.mujoco import create_image_48_sawyer_reach_xy_env_v1
+#Jaco2ObjectsPusherOneXYEnv-v0
+#Jaco2ObjectsPusherXYEnv-v0
+env = gym.make("Jaco2ObjectsPusherOneXYEnv-v0" ,
+               isRender = True,
 
-env = gym.make("Jaco2ObjectsPusherXYEnv-v0" )
+               isRenderGoal=True, num_movable_bodies =1)
 
 
 #env = create_image_pybullet_jaco_push_primitive_xy_env_v1()
 #env = create_image_48_sawyer_reach_xy_env_v1()
 obs = env.reset()
 
-print("obs:", env.observation_space.shape)
+print("obs:", env.observation_space )
 print("action:", env.action_space.shape)
 
 

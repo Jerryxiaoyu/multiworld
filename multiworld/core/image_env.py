@@ -178,6 +178,7 @@ class ImageEnv(ProxyEnv, MultitaskEnv):
             width=self.imsize,
             height=self.imsize,
         )
+
         self._last_image = image_obs
         if self.grayscale:
             image_obs = Image.fromarray(image_obs).convert('L')
@@ -186,8 +187,48 @@ class ImageEnv(ProxyEnv, MultitaskEnv):
             image_obs = image_obs / 255.0
         if self.transpose:
             image_obs = image_obs.transpose()
+
         assert image_obs.shape[0] == self.channels
+
         return image_obs.flatten()
+
+    def _get_flat_img2(self):
+
+        if 'pybullet' not in self._wrapped_env.spec._entry_point:
+            image_obs = self._wrapped_env.get_image(
+                width=self.imsize,
+                height=self.imsize, )
+        else:
+            self.image_mode = 'rgb'
+
+            obs = self._wrapped_env.get_image(
+                width=self.imsize,
+                height=self.imsize,
+                mode=self.image_mode)
+            if self.image_mode =='rgb':
+                image_obs = obs
+            else:
+                image_obs = obs.get('rgb')
+                depth = obs.get('depth')
+                segmask = obs.get('segmask')
+
+
+        self._last_image = image_obs
+        if self.grayscale:
+            image_obs = Image.fromarray(image_obs).convert('L')
+            image_obs = np.array(image_obs)
+        if self.normalize:
+            image_obs = image_obs / 255.0
+        if self.transpose:
+            image_obs = image_obs.transpose()
+            if self.image_mode != 'rgb':
+                depth = depth.transpose() if depth is not None else None
+                segmask = segmask.transpose() if segmask is not None else None
+        assert image_obs.shape[0] == self.channels
+        if self.image_mode == 'rgb':
+            return image_obs.flatten()
+        else:
+            return
 
     def render(self, mode='wrapped'):
         if mode == 'wrapped':

@@ -12,6 +12,10 @@ import os, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
 
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
+
+
 ROBOT_URDF_PATH = os.path.join(os.path.dirname(currentdir), 'assets')
 OBJECTS_DICT = {
 
@@ -43,6 +47,8 @@ OBJECTS_DICT = {
 
 
 'ball_visual': ["objects/balls/ball_visual.urdf",(0,0,0), []],
+
+'box_b':  ['objects/box/box_blue.urdf',(0,0,0), []],
 
 }
 def get_config_value(config):
@@ -285,6 +291,39 @@ class Objects(object):
         else:
 
             self._load_movable_objects()
+
+
+    @property
+    def object_sample_space_high(self):
+        return self.OBJ_POS_UPPER_SPACE
+    @property
+    def object_sample_space_low(self):
+        return self.OBJ_POS_LOWER_SPACE
+
+    @property
+    def object_max_space_high(self):
+        return self.OBJ_MAX_UPPER_SPACE
+
+    @property
+    def object_max_space_low(self):
+        return self.OBJ_MAX_LOWER_SPACE
+
+    @property
+    def object_euler_space_low(self):
+        return self.OBJ_EULER_LOWER_SPACE
+
+    @property
+    def object_euler_space_high(self):
+        return self.OBJ_EULER_UPPER_SPACE
+
+    @property
+    def object_space_polygon(self):
+        obj_space_polygon = Polygon([(self.OBJ_MAX_LOWER_SPACE[0], self.OBJ_MAX_UPPER_SPACE[1]),
+                                          (self.OBJ_MAX_UPPER_SPACE[0], self.OBJ_MAX_UPPER_SPACE[1]),
+                                          (self.OBJ_MAX_UPPER_SPACE[0], self.OBJ_MAX_LOWER_SPACE[1]),
+                                          (self.OBJ_MAX_LOWER_SPACE[0], self.OBJ_MAX_LOWER_SPACE[1])])
+
+        return obj_space_polygon
 
 
 

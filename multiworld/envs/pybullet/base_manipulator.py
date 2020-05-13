@@ -132,7 +132,7 @@ TABLE_UDRF_LIST = {
 
 }
 
-class ManipulatorXYZEnv(BasePybulletEnv, Serializable, metaclass=abc.ABCMeta):
+class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': 50
@@ -279,6 +279,7 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable, metaclass=abc.ABCMeta):
         self._envStepCounter = 0
         self.observations = None
         ##-------------init process-------------
+        self._set_observation_space()
         self._seed()
         self._init_render_setting()     # connect pybullet, and set render & camera
         self.reset()                    # load env, robot
@@ -343,7 +344,7 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable, metaclass=abc.ABCMeta):
                                      distance= camera_params['distance'],
                                      camera_pose= camera_params['camera_pose'],
 
-                                     isImgDepth=False,
+                                     isImgDepth=self._isImgDepth,
                                      isImgMask=self._isImgMask,
                                      shadow_enable=self._shadow_flag,
                                      opengl_Render_enable=self._opengl_Render_enable,
@@ -395,7 +396,7 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable, metaclass=abc.ABCMeta):
         self._OnlyXYControl= self._control_mode["OnlyXY"]
         # define Obsevation Space
 
-        self._set_observation_space()
+
 
 
     def _set_observation_space(self):
@@ -693,24 +694,33 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable, metaclass=abc.ABCMeta):
         """
         pass
 
-    def get_image(self, width=84, height=84, mode='rgb'):
+    def get_image(self, width=None, height=None, mode='rgb'):
 
         images = self.camera.frames()
 
         if mode =='rgb':
-            if width != self.image_width or height != self.image_height:
+            if width is not None and height is not None and (width != self.image_width or height != self.image_height):
                 return cv2.resize(images['rgb'], (height, width), interpolation=cv2.INTER_NEAREST)
             else:
                 return images['rgb']
         elif mode =='rgbd':
+            if width is not None and height is not None and (width != self.image_width or height != self.image_height):
+                rgb_img = cv2.resize(images['rgb'], (height, width), interpolation=cv2.INTER_NEAREST)
+            else:
+                rgb_img = images['rgb']
+
             return {
-                'rgb': images['rgb'],
+                'rgb': rgb_img,
                 'depth': images['depth'],
 
             }
         elif mode == 'rgbd-seg':
+            if width is not None and height is not None and (width != self.image_width or height != self.image_height):
+                rgb_img = cv2.resize(images['rgb'], (height, width), interpolation=cv2.INTER_NEAREST)
+            else:
+                rgb_img = images['rgb']
             return {
-                'rgb': images['rgb'],
+                'rgb': rgb_img,
                 'depth':images['depth'],
                 'segmask':images['segmask']
             }

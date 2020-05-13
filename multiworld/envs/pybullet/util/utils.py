@@ -1,7 +1,7 @@
 import pybullet
 import numpy as np
 
-from ottermodels.math import Pose
+from multiworld.math import Pose
 
 def plot_pose(
               pose,
