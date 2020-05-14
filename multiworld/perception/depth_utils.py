@@ -8,7 +8,7 @@ import numpy as np
 import scipy.misc
 import scipy.stats
 
-from ottermodels.perception import image_utils
+from multiworld.perception import image_utils
 import cv2
 
 transform = image_utils.transform
