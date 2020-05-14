@@ -1,9 +1,6 @@
 import os
 
 
-import ottermodels
-import gym
-
 import numpy as np
 from datetime import datetime
 import os
@@ -204,7 +201,7 @@ class HeuristicPushMaskSampler(object):
 
 def main():
     import pybullet as p
-    from ottermodels.envs.pybullet.util.bullet_camera import create_camera
+    from multiworld.envs.pybullet.util.bullet_camera import create_camera
 
     camera_params = {"target_pos": (0.0, -0.461, -0.004),
                      "distance": 1,
