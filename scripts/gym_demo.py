@@ -11,8 +11,8 @@ from multiworld.envs.mujoco import create_image_48_sawyer_reach_xy_env_v1
 # SawyerPushAndReachArenaResetFreeEnv-v0
 # SawyerPushAndReachSmallArenaEnv-v0
 # SawyerPickupEnv-v0
-
-env = gym.make("SawyerPushNIPSEasy-v0" )
+import multiworld.envs.gridworlds
+env = gym.make("GoalGridworld-v0" )
 
 #env = create_image_48_sawyer_reach_xy_env_v1()
 #env = MultiSawyerEnv()
@@ -23,8 +23,8 @@ print("obs:", env.observation_space.shape)
 print("action:", env.action_space.shape)
 
 
-for i in range(2000):
-    n_dim_action = env.action_space.shape[0]
+for i in range(200):
+
     action = env.action_space.sample() # np.zeros(n_dim_action)#
     obs, reward, done, info = env.step(action)
 

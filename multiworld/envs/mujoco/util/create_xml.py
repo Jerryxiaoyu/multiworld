@@ -7,7 +7,7 @@ import os
 import random
 import numpy as np
 import stl
-from stl import mesh
+
 import multiworld
 
 def find_mins_maxs(obj):
@@ -51,6 +51,8 @@ def create_object_xml(filename, num_objects, object_mass, friction_params, objec
     :param load_dict_list: if not none load configuration, instead of sampling
     :return: if not loading, save dictionary with static object properties
     """
+    from stl import mesh
+    
     xmldir = '/'.join(str.split(filename, '/')[:-1])
     root = ET.Element("top")
 

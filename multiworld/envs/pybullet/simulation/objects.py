@@ -20,7 +20,7 @@ ROBOT_URDF_PATH = os.path.join(os.path.dirname(currentdir), 'assets')
 OBJECTS_DICT = {
 
 'master_chef':["YCB/002_master_chef_can/master_chef.urdf",(0,0,0), []],
-'sugar_box':["YCB/004_sugar_box/sugar_box.urdf",(0,math.pi/2,0), []],
+'sugar_box':["YCB/004_sugar_box/sugar_box.urdf",(math.pi,-math.pi/2,0), []],
 'tomato_soup_can':["YCB/005_tomato_soup_can/tomato_soup_can.urdf",(0,0,0), []],
 'mustard_bottle':["YCB/006_mustard_bottle/mustard_bottle.urdf",  (-math.pi/2, 0,  -math.pi/6), []],
 'pudding_box':["YCB/008_pudding_box/pudding_box.urdf",(0,0,0), []],
@@ -126,9 +126,11 @@ class Objects(object):
 
         if len(self.movable_bodies) ==0:
             self.target_movable_paths = []
+            self.base_eulers = []
             for obj_name in self.OBJ_NAME_LIST:
                 if not os.path.isabs(obj_name):
                     file_path = os.path.join(ROBOT_URDF_PATH, OBJECTS_DICT[obj_name][0])
+                    self.base_eulers.append(OBJECTS_DICT[obj_name][1])
                 else:
                     file_path = obj_name
                 self.target_movable_paths += glob.glob(file_path)
@@ -144,12 +146,17 @@ class Objects(object):
                 movable_poses = self._sample_body_poses( self.NUM_MOVABLE_BODIES )
 
                 for i in range(self.NUM_MOVABLE_BODIES):
+                    index = random.randint(0, len(self.target_movable_paths)-1)
 
-                    urdf_path = random.choice( self.target_movable_paths)
+                    urdf_path = self.target_movable_paths[index]
+                    base_pose = self.base_eulers[index]
 
                     pose = movable_poses[i]
                     scale = np.random.uniform(*self.OBJ_SCALE_RANGE)
                     name = 'movable_%d' % i
+
+                    pose.euler = base_pose
+
 
                     # Add object.
                     obj_body = Body(self._p, urdf_path, pose, scale=scale, name=name)
@@ -172,7 +179,7 @@ class Objects(object):
             self._reset_counter = 0
         self._reset_counter += 1
 
-        self._reset_movable_obecjts()
+        #self._reset_movable_obecjts()
     def _sample_body_poses(self,  num_samples, max_attemps=32):
         """Sample body poses.
 
@@ -240,11 +247,14 @@ class Objects(object):
 
         assert movable_poses is not None
 
+
         if len(self.movable_bodies) == 0:
             self.target_movable_paths = []
+            self.base_eulers = []
             for obj_name in self.OBJ_NAME_LIST:
                 if not os.path.isabs(obj_name):
                     file_path = os.path.join(ROBOT_URDF_PATH, OBJECTS_DICT[obj_name][0])
+                    self.base_eulers.append(OBJECTS_DICT[obj_name][1])
                 else:
                     file_path = obj_name
                 self.target_movable_paths += glob.glob(file_path)
@@ -252,12 +262,16 @@ class Objects(object):
 
 
             for i in range(self.NUM_MOVABLE_BODIES):
-
-                urdf_path = random.choice(self.target_movable_paths)
+                index = i#random.randint(0, len(self.target_movable_paths) - 1)
+                urdf_path = self.target_movable_paths[index]
+                base_pose = self.base_eulers[index]
 
                 pose = movable_poses[i]
                 scale = np.random.uniform(*self.OBJ_SCALE_RANGE)
                 name = 'movable_%d' % i
+
+                pose.euler = base_pose
+
 
                 # Add object.
                 obj_body = Body(self._p, urdf_path, pose, scale=scale, name=name)

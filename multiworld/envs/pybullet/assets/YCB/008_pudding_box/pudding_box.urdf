@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<robot name="Tomato_soup_can">
+  <link name="Link">
+
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.001518 0.018796 0.018658"/>
+       <mass value="0.05130000"/>
+
+       <inertia ixx="0.00000027730" ixy="-0.00000000014" ixz="-0.00000000076"
+                iyy="0.00000034573" iyz="0.00000000034"
+                izz="0.00000055128"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+            <mesh filename="textured2.obj" scale="1 1 1"/>
+      </geometry>
+        <material name="framemat0">
+        <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+
+    <collision>
+      <geometry>
+	 	 <mesh filename="textured2.obj" scale="1 1 1"/>
+      </geometry>
+    </collision>
+  </link>
+</robot>
+

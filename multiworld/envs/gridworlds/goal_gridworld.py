@@ -10,13 +10,15 @@ import copy
 import gym
 from gym import utils
 from gym.envs.toy_text import discrete
+import matplotlib.pyplot as plt
+
 ACTIONS = [(-1, 0), (0, 1), (1, 0), (0, -1),(0,0)]
 LEFT = 0
 DOWN = 1
 RIGHT = 2
 UP = 3
 STAY = 4
-RENDER_DIR = '/home/coline/Desktop/renderings/'
+RENDER_DIR = '/home/drl/goal_gridworld/renderings/'
 
 
 class GoalGridworld(GoalEnv):
@@ -27,9 +29,6 @@ class GoalGridworld(GoalEnv):
     `achieved_goal` is the goal that it currently achieved instead. `observation` contains the
     actual observations of the environment as per usual.
     """
-
-
-
 
         
     def __init__(self,  size=[10,10], concatenated=False):

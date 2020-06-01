@@ -41,17 +41,17 @@ class MultitaskEnv(gym.Env, metaclass=abc.ABCMeta):
         :return:
         """
 
-        pass
-
     def sample_goal(self):
         goals = self.sample_goals(1)
         return self.unbatchify_dict(goals, 0)
 
     def compute_reward(self, action, obs):
         actions = action[None]
-        next_obs = {
-            k: v[None] for k, v in obs.items()
-        }
+        next_obs = {}
+        for k, v in obs.items():
+            if v is not None:
+                next_obs[k] = v[None]
+
         return self.compute_rewards(actions, next_obs)[0]
 
     def get_diagnostics(self, *args, **kwargs):

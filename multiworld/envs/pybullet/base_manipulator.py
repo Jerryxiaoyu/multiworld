@@ -124,6 +124,12 @@ CONTROL_MODES_LISTS = {
               "n_dim_action": 4,
                "OnlyXY" :True
              },
+"push_primitive_discXY":{
+              "n_disc_actions": 10,
+              "n_dim_action": None,
+               "OnlyXY" :True
+             },
+
 }
 
 TABLE_UDRF_LIST = {
@@ -189,11 +195,13 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
                  table_position         =   [0.0000000, -0.650000, -0.40000],
                  stepTextPosition       =   [-0.8, 0, 0.0],
 
+
                  # debug info
                  debug=False,
                  debug_joint=False,
                  state_vis=False,
                  robot_info_debug=False,
+                 good_render = False,
 
                  # others
                  num_check_initPos = 20,
@@ -278,6 +286,8 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
         self._observation = []
         self._envStepCounter = 0
         self.observations = None
+
+        self.good_render = good_render
         ##-------------init process-------------
         self._set_observation_space()
         self._seed()
@@ -299,6 +309,11 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
                     cid = self._p.connect(self._p.GUI)
                 else:
                     self._p.connect(self._p.DIRECT)
+
+                if self.good_render:
+                    self._p.configureDebugVisualizer(self._p.COV_ENABLE_GUI, 0)
+                    self._p.configureDebugVisualizer(self._p.COV_ENABLE_SHADOWS, 0)
+
                 self._p.resetDebugVisualizerCamera(self._render_params["distance"], self._render_params["yaw"],
                                                    self._render_params["pitch"],  self._render_params["target_pos"] )
             else:
@@ -383,6 +398,7 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
         if n_discrete_actioins is not None:
             self.action_space = spaces.Discrete(n_discrete_actioins)
             self._isDiscrete = True
+            self.n_discrete_actioins= n_discrete_actioins
             assert self.action_dim is None
 
         if self.action_dim is not None:
@@ -442,7 +458,11 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
             self._p.setTimeStep(self._timeStep)
 
             # import plane and table
-            self.Uid_plane = self._p.loadURDF(os.path.join(self._urdfRoot, "plane.urdf"), self._default_plane_pos)
+           # self.Uid_plane = self._p.loadURDF(os.path.join(self._urdfRoot, "plane.urdf"), self._default_plane_pos)
+            if self.good_render:
+                self.Uid_plane = self._p.loadURDF(os.path.join(self._robot_urdfRoot, "planes/plane_ceramic.urdf"), self._default_plane_pos)
+            else:
+                self.Uid_plane = self._p.loadURDF(os.path.join(self._urdfRoot, "plane.urdf"), self._default_plane_pos)
             self._p.changeDynamics(self.Uid_plane, -1, contactStiffness = 1. , contactDamping = 1)
 
             if self._addTable:
@@ -487,7 +507,7 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
                     break
                 if i == (num_check - 1):
                     if self._ignore_initError:
-                        print('Warning: The initial position was not reached. And re-select a new configuration.')
+                       # print('Warning: The initial position was not reached. And re-select a new configuration.')
                         return False
                     raise Exception("The init position was not reached.")
             return True
@@ -535,7 +555,7 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
         target_xyz = np.array(target_xyzq[:3])
         dis = np.linalg.norm(ee_pos-target_xyz)
 
-        if dis<0.008:
+        if dis<0.01:
             return True
         else:
             return False
