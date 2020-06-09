@@ -178,7 +178,7 @@ class Jaco2PushPrimitiveXYDisc(Jaco2PushPrimitiveXY):
         valid_depth_heightmap = depth_heightmap.copy()
         valid_depth_heightmap[np.isnan(valid_depth_heightmap)] = 0
 
-        return color_heightmap, depth_heightmap, valid_depth_heightmap
+        return  color_heightmap, depth_heightmap, valid_depth_heightmap
 
     def _get_obs(self):
         if self._isImageObservation:
