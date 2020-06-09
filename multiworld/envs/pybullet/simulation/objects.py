@@ -157,7 +157,6 @@ class Objects(object):
 
                     pose.euler = base_pose
 
-
                     # Add object.
                     obj_body = Body(self._p, urdf_path, pose, scale=scale, name=name)
 
@@ -179,7 +178,7 @@ class Objects(object):
             self._reset_counter = 0
         self._reset_counter += 1
 
-        #self._reset_movable_obecjts()
+        self._reset_movable_obecjts()
     def _sample_body_poses(self,  num_samples, max_attemps=32):
         """Sample body poses.
 
@@ -262,7 +261,8 @@ class Objects(object):
 
 
             for i in range(self.NUM_MOVABLE_BODIES):
-                index = i#random.randint(0, len(self.target_movable_paths) - 1)
+                #index = i#random.randint(0, len(self.target_movable_paths) - 1)  # for fixed object
+                index = random.randint(0, len(self.target_movable_paths) - 1)
                 urdf_path = self.target_movable_paths[index]
                 base_pose = self.base_eulers[index]
 
@@ -338,6 +338,11 @@ class Objects(object):
                                           (self.OBJ_MAX_LOWER_SPACE[0], self.OBJ_MAX_LOWER_SPACE[1])])
 
         return obj_space_polygon
+
+    def remove_all_body(self):
+        for body in self.movable_bodies:
+            body.remove_body()
+        self.movable_bodies =[]
 
 
 

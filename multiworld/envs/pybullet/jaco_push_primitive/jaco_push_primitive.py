@@ -176,6 +176,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             #logger.info('Setting reward mode : %s'% self.reward_mode)
         else:
             self.reward_mode = reward_mode
+            print('reward mode:', reward_mode)
             #logger.info('Setting default Reward mode: %s'%self.reward_mode)
 
         # Visualization.
@@ -250,7 +251,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         self._envStepCounter = 0
         self._envActionSteps = 0
 
-        #self.plot_boundary()
+        self.plot_boundary()
 
         if self.vis_debug:
             self.vis_plot_count += 1
@@ -273,7 +274,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         obs = self._get_obs()
 
         for k in self.observation_space.spaces.keys():
-            assert obs[k].shape == self.observation_space.spaces[k].shape , 'obs {} shape error'.format(k)
+            assert obs[k].shape == self.observation_space.spaces[k].shape , 'obs {} shape {} does not match the shape obs space {} '.format(k, obs[k].shape, self.observation_space.spaces[k].shape)
 
     def _get_obs(self):
         if self._isImageObservation:
@@ -735,16 +736,21 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
         state_goal = goal['state_desired_goal']
 
-        euler_orns = [[-math.pi,-math.pi/2,0], [0,0,0]]
-        object_poses =[]
+       # euler_orns = [[-math.pi,-math.pi/2,0], [0,0,0]]
+       #  object_poses =[]
+       #  for i in range(self.num_objects):
+       #      if i ==1:
+       #          object_poses.append( self.movable_bodies[1].pose)
+       #      else:
+       #          pos = [0, -0.45, 0.06]#self.get_object_goal_pos_from_stategoal(state_goal, i)
+       #          euler_orn = euler_orns[i]#self.get_object_goal_euler_orn_from_stategoal(state_goal, i)
+       #          object_poses.append(Pose([pos,euler_orn]))
+        object_poses = []
         for i in range(self.num_objects):
-            if i ==1:
-                object_poses.append( self.movable_bodies[1].pose)
-            else:
-                pos = [0, -0.45, 0.06]#self.get_object_goal_pos_from_stategoal(state_goal, i)
-                euler_orn = euler_orns[i]#self.get_object_goal_euler_orn_from_stategoal(state_goal, i)
-                object_poses.append(Pose([pos,euler_orn]))
 
+            pos = self.get_object_goal_pos_from_stategoal(state_goal, i)
+            euler_orn =  self.get_object_goal_euler_orn_from_stategoal(state_goal, i)
+            object_poses.append(Pose([pos, euler_orn]))
 
         self.objects_env._reset_movable_obecjts(object_poses)
 
@@ -790,8 +796,10 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         return  [x, y, z]
 
     def get_object_goal_euler_orn_from_stategoal(self, state_goal, i):
-
-        return [0,0,0]
+        #roll = 0
+        #pitch = 0
+        yaw = self.movable_bodies[i].pose.euler[2]
+        return [0,0,yaw]
 
     def sample_goal_for_rollout(self):
         if self._isRandomGoals:
@@ -816,7 +824,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
                 'fixed_objects_goals', self.goal_dim, len(self.fixed_objects_goals))
             object_goals = np.array(self.fixed_objects_goals).copy()
 
-        object_goals = np.array([np.random.uniform( -0.06, -0.15) , np.random.uniform(-0.37,-0.45)])
+       ## object_goals = np.array([np.random.uniform( -0.06, -0.15) , np.random.uniform(-0.37,-0.45)])  hard code
         return object_goals
 
     def visualize(self, action, info):
@@ -834,24 +842,24 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         ##-----your plot
         states = self.get_object_pos(obj_index)[:2]
 
-        if 'best_pred_states' in info:
-            pred_states = info['best_pred_states']
-
-            num_info_samples = info['num_samples']
-            max_plots = min(num_info_samples,  MAX_STATE_PLOTS)
-            for i in range(max_plots):
-                if i == 0:
-                    c = 'orange'
-                    alpha = 0.8
-                else:
-                    c = 'gold'
-                    alpha = 0.4
-                self._plot_single_state_trajectory(self.ax,
-                                       states,
-                                       pred_states[i],
-                                       #terminations[i],
-                                       c=c,
-                                       alpha=alpha)
+        # if 'best_pred_states' in info:
+        #     pred_states = info['best_pred_states']
+        #
+        #     num_info_samples = info['num_samples']
+        #     max_plots = min(num_info_samples,  MAX_STATE_PLOTS)
+        #     for i in range(max_plots):
+        #         if i == 0:
+        #             c = 'orange'
+        #             alpha = 0.8
+        #         else:
+        #             c = 'gold'
+        #             alpha = 0.4
+        #         self._plot_single_state_trajectory(self.ax,
+        #                                states,
+        #                                pred_states[i],
+        #                                #terminations[i],
+        #                                c=c,
+        #                                alpha=alpha)
 
         n_hor = info['best_actions'][0].shape[0]
 
@@ -875,21 +883,21 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
         num_traj_itr = info['best_pred_states'].shape[0]
         c_list =['forestgreen', 'olive', 'lawngreen', 'red', 'yellow']
-        for itr in range(info['itr']-1):
-            num_traj_itr = min(num_traj_itr, MAX_STATE_PLOTS)
-            for i in range(num_traj_itr):
-                if i ==0:
-                    alpha =0.8
-                else:
-                    alpha =0.4
-                pred_states = info['stat_info']['traj_state_{}'.format(itr)]
-
-                self._plot_single_state_trajectory(self.ax,
-                                                   states,
-                                                   pred_states[i],
-                                                   # terminations[i],
-                                                   c=c_list[itr],
-                                                   alpha=alpha)
+        # for itr in range(info['itr']-1):
+        #     num_traj_itr = min(num_traj_itr, MAX_STATE_PLOTS)
+        #     for i in range(num_traj_itr):
+        #         if i ==0:
+        #             alpha =0.8
+        #         else:
+        #             alpha =0.4
+        #         pred_states = info['stat_info']['traj_state_{}'.format(itr)]
+        #
+        #         self._plot_single_state_trajectory(self.ax,
+        #                                            states,
+        #                                            pred_states[i],
+        #                                            # terminations[i],
+        #                                            c=c_list[itr],
+        #                                            alpha=alpha)
 
         fiel_name = os.path.join(self.plot_res, 'debug_{}.png'.format(self._envActionSteps) )
         plt.savefig(fiel_name)
@@ -1116,6 +1124,112 @@ class Jaco2PushPrimitiveXYGoalEnv(Jaco2PushPrimitiveXY):
             # end_effector=[ee_pos, ee_orn],
 
             is_success=float(  sum(object_distances.values()) < 0.06),
+            **object_distances,
+            **touch_distances,
+        )
+
+        return info
+
+
+class Jaco2PushPrimitiveXYGoalAddDistEnv(Jaco2PushPrimitiveXY):
+    def __init__(self, **kwargs):
+        Jaco2PushPrimitiveXY.__init__(self, **kwargs)
+
+    def _reward(self, obs, action, others=None):
+        reward = self.compute_reward(obs['state_observation'], obs['state_desired_goal'])
+        return reward
+
+    def compute_reward(self, achieved, goal, info=None):
+        r = -np.linalg.norm(achieved - goal, axis=-1)
+        return r
+
+    def _set_observation_space(self):
+        if self.goal_order == ['x','y']:
+            low_space = [self.objects_env.object_max_space_low[0] ,
+                         self.objects_env.object_max_space_low[1]]
+            high_space = [self.objects_env.object_max_space_high[0] ,
+                         self.objects_env.object_max_space_high[1]]
+            obs_box = Box(np.tile(np.array(low_space), self.num_objects + 1),
+                               np.tile(np.array(high_space), self.num_objects + 1))
+
+            self.state_obs_box = Box(np.tile(np.array(low_space), self.num_objects ),
+                               np.tile(np.array(high_space), self.num_objects ))
+
+
+
+            low_space = [self._target_lower_space[0],
+                         self._target_lower_space[1]]
+            high_space = [self._target_upper_space[0],
+                          self._target_upper_space[1]]
+            self.goal_box = Box(np.tile(np.array(low_space),   self.num_objects ),
+                                 np.tile(np.array(high_space), self.num_objects ))
+
+            self.state_goal_box = self.goal_box
+
+
+        self.observation_space = Dict([
+            ('observation',  obs_box),                  # object position [x,y]*n
+            ('state_observation',  self.state_obs_box),      # object pose [x,y,z,roll picth, yaw] *n
+            ('desired_goal', self.goal_box),                 # goal object position [x,y]*n
+            ('achieved_goal', self.state_obs_box),                 # actual object position [x,y]*n
+            ('state_desired_goal', self.state_goal_box),     # goal object pose [x,y,z,roll picth, yaw] *n
+            ('state_achieved_goal', self.state_obs_box),     # actual pose [x,y,z,roll picth, yaw] *n
+
+        ])
+
+    def _get_obs(self):
+        if self._isImageObservation:
+            images = self.camera.frames()
+            # image
+            rgb = images['rgb']
+            depth = images['depth']
+            segmask = images['segmask']
+
+        if self.goal_order == ['x', 'y']:
+            bs = []
+            orns = []
+            for body in  self.movable_bodies :
+                bs.append(body.position[:2])
+                orns.append(body.orientation.euler)
+
+            pos = np.concatenate(bs)
+            orn = np.concatenate(orns)
+
+            state =  np.concatenate((pos,  pos - self.state_goal))
+
+            state_goal = self.state_goal
+
+        new_obs = dict(
+            observation= state,              # obj pos [x,y]*n
+            state_observation=pos,         # obj pos [x,y]*n
+            desired_goal=state_goal,         # desired goal: obj pos [x,y]*n
+            state_desired_goal=state_goal,   # desired goal: obj pos [x,y]*n
+            achieved_goal=pos,
+            state_achieved_goal =pos,
+        )
+        if self._isImageObservation:
+            new_obs['image'] = rgb
+            new_obs['depth'] = depth
+            new_obs['segmask'] = segmask
+        return new_obs
+
+
+    def _get_info(self):
+        ee_pos, ee_orn = self.robot.GetEndEffectorObersavations()
+
+        object_distances = {}
+        touch_distances = {}
+        for i in range(self.num_objects):
+            object_name = "object%d_distance" % i
+            object_distance = np.linalg.norm(
+                self.get_object_goal_pos(i) - self.get_object_pos(i)
+            )
+            object_distances[object_name] = object_distance
+
+        info = dict(
+            # end_effector=[ee_pos, ee_orn],
+
+            is_success=float(sum(object_distances.values()) < 0.05),
             **object_distances,
             **touch_distances,
         )

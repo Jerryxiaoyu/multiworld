@@ -81,8 +81,14 @@ class Jaco2PushPrimitiveXYDisc(Jaco2PushPrimitiveXY):
         Jaco2PushPrimitiveXY.__init__(self, **kwargs)
 
         self.heatmap_shape = self._get_heatmap_size()
+        print('env heatmap shape:', self.heatmap_shape, self.heightmap_resolution)
+
         n_discrete_actioins = self.heatmap_shape[0] * self.heatmap_shape[1] * self.NUM_ANGLE
-        self.action_space = spaces.Discrete(n_discrete_actioins)
+
+        self.action_dim = 3
+        action_high = np.array([1] * self.action_dim)
+        #self.action_space = spaces.Box(-action_high, action_high)
+        self.action_space =   spaces.Box(-action_high, action_high)#spaces.Discrete(n_discrete_actioins)
         self._isDiscrete = True
         self.n_discrete_actioins = n_discrete_actioins
 
@@ -128,6 +134,9 @@ class Jaco2PushPrimitiveXYDisc(Jaco2PushPrimitiveXY):
 
             self.state_goal_box = self.goal_box
 
+            self.changed_obj_box = Box(np.array([0]),np.array([1]))
+
+
         self.observation_space = Dict([
             ('observation', self.obs_box),  # object position [x,y]*n
             ('state_observation', self.state_obs_box),  # object pose [x,y,z,roll picth, yaw] *n
@@ -135,16 +144,19 @@ class Jaco2PushPrimitiveXYDisc(Jaco2PushPrimitiveXY):
             ('achieved_goal', self.obs_box),  # actual object position [x,y]*n
             ('state_desired_goal', self.state_goal_box),  # goal object pose [x,y,z,roll picth, yaw] *n
             ('state_achieved_goal', self.state_obs_box),  # actual pose [x,y,z,roll picth, yaw] *n
-
+            ('changed_object', self.changed_obj_box)
         ])
 
     def reset(self):
 
+        self.last_obj_pose = Pose([[0,0,0],[0,0,0]])
         self.workspace_limits = np.asarray([
             [self._hand_init_low[0], self._hand_init_high[0]],  # x
             [self._hand_init_low[1], self._hand_init_high[1]],  # y
             [ 0.035, 0.4]])  # z
         super().reset()
+
+        self.last_obj_pose = self.movable_bodies[0].pose
 
         return self._get_obs()
 
@@ -184,6 +196,16 @@ class Jaco2PushPrimitiveXYDisc(Jaco2PushPrimitiveXY):
                 bs.append(body.position[:2])
                 orns.append(body.orientation.euler)
 
+            current_pose = self.movable_bodies[0].pose
+            pose_delta = np.linalg.norm(current_pose.position - self.last_obj_pose.position)
+            yaw_delta = current_pose.yaw - self.last_obj_pose.yaw
+            if pose_delta > 0.01 or yaw_delta >3/180.*math.pi:
+                changed_object = 1
+            else:
+                changed_object = 0
+
+            self.last_obj_pose = self.movable_bodies[0].pose
+
             pos = np.concatenate(bs)
             orn = np.concatenate(orns)
 
@@ -198,6 +220,7 @@ class Jaco2PushPrimitiveXYDisc(Jaco2PushPrimitiveXY):
             state_desired_goal=state_goal,  # desired goal: obj pos [x,y]*n
             achieved_goal=state,
             state_achieved_goal=state,
+            changed_object = np.array([changed_object])
 
         )
         if self._isImageObservation:
@@ -221,13 +244,13 @@ class Jaco2PushPrimitiveXYDisc(Jaco2PushPrimitiveXY):
         # pix_u = action % (self.heatmap_shape[0] * self.heatmap_shape[1]) // self.heatmap_shape[1]
         # pix_v = action % (self.heatmap_shape[0] * self.heatmap_shape[1]) % self.heatmap_shape[1]
 
-        angle = action[0]# // (self.heatmap_shape[0] * self.heatmap_shape[1])
+        angle = int(action[0])# // (self.heatmap_shape[0] * self.heatmap_shape[1])
         # % (self.heatmap_shape[0] * self.heatmap_shape[1]) // self.heatmap_shape[1]
-        pix_v = action[1]# % (self.heatmap_shape[0] * self.heatmap_shape[1]) % self.heatmap_shape[1]
-        pix_u = action[2]
+        pix_v = int(action[1])# y   % (self.heatmap_shape[0] * self.heatmap_shape[1]) % self.heatmap_shape[1]
+        pix_u = int(action[2])# x
 
         assert pix_u >= 0 and pix_u < self.heatmap_shape[1]
-        assert pix_v >= 0 and pix_u < self.heatmap_shape[0]
+        assert pix_v >= 0 and pix_v < self.heatmap_shape[0]
         assert angle >= 0 and angle < self.NUM_ANGLE
 
         x = pix_u * self.heightmap_resolution + self.workspace_limits[0][0]
@@ -273,6 +296,7 @@ class Jaco2PushPrimitiveXYDisc(Jaco2PushPrimitiveXY):
         return waypoints
 
     def _get_info(self):
+
         ee_pos, ee_orn = self.robot.GetEndEffectorObersavations()
 
         object_distances = {}
@@ -371,14 +395,42 @@ class Jaco2PushPrimitiveXYDisc(Jaco2PushPrimitiveXY):
         return self.movable_bodies[i].pose
 
     def compute_rewards(self, action, obs, info=None):
-        r = -np.linalg.norm(obs['state_observation'] - obs['state_desired_goal'], axis=1)
 
+       # r = -np.linalg.norm(obs['state_observation'] - obs['state_desired_goal'], axis=1)
 
-        r[r>-0.02] += 1
+        if self.reward_mode == 0:  # dense
+            r = -np.linalg.norm(obs['state_observation'] - obs['state_desired_goal'], axis=1)
+            r += obs['changed_object'][:,0]
+        elif self.reward_mode == 1:  # sparse
+            r = obs['changed_object'][:,0] / 2.
+
+            dis = np.linalg.norm(obs['state_observation'] - obs['state_desired_goal'], axis=1 )
+
+            r[np.where(dis<0.06)[0]] += 1
+
+        else:
+            raise NotImplementedError
+
         return r
 
     def compute_reward(self, action, obs, info=None):
-        r = -np.linalg.norm(obs['state_observation'] - obs['state_desired_goal'])
+
+        if self.reward_mode == 0: # dense
+            r = -np.linalg.norm(obs['state_observation'] - obs['state_desired_goal'])
+            r += obs['changed_object']
+        elif self.reward_mode == 1: # sparse
+            r = obs['changed_object']/2.
+
+            dis = np.linalg.norm(obs['state_observation'] - obs['state_desired_goal'])
+            if dis < 0.06:
+                r += 1
+
+        else:
+            raise NotImplementedError
+
+
+
+
         return r
 
     def set_goal(self, goal):
@@ -496,7 +548,7 @@ class Jaco2PushPrimitiveXYDisc(Jaco2PushPrimitiveXY):
         # Reset.
 
         # rgb = obs['image']
-        rgb = self._plot_box_in_image(obs['image'])
+        rgb = self._plot_box_in_image(obs['image_observation'])
         self.ax.cla()
         self.ax.imshow(rgb)
 
@@ -504,13 +556,60 @@ class Jaco2PushPrimitiveXYDisc(Jaco2PushPrimitiveXY):
         waypoints = self._compute_waypoints(action)
         self._plot_waypoints(self.ax,
                              waypoints,
-                             linewidth=3,
-                             c='royalblue',
+                             linewidth=5,
+                             c='red',
                              alpha=0.5)
 
         ##-----
         plt.draw()
         plt.pause(1e-3)
+
+    def _plot_waypoints(self,
+                        ax,
+                        waypoints,
+                        linewidth=1.0,
+                        c='blue',
+                        alpha=1.0):
+        """Plot waypoints.
+
+        Args:
+            ax: An instance of Matplotlib Axes.
+            waypoints: List of waypoints.
+            linewidth: Width of the lines connecting waypoints.
+            c: Color of the lines connecting waypoints.
+            alpha: Alpha value of the lines connecting waypoints.
+        """
+        z = 0.05
+        #
+        # p1 = None
+        # p2 = None
+        # for i, waypoint in enumerate(waypoints):
+        #     point1 = waypoint[:3]
+        #     point1 = np.array([point1[0], point1[1], z])
+        #     p1 = self.camera.project_point(point1)
+        #     # if i == 0:
+        #     #     ax.scatter(p1[0], p1[1],
+        #     #                c=c, alpha=alpha, s=2.0)
+        #     # else:
+        #     #     ax.plot([p1[0], p2[0]], [p1[1], p2[1]],
+        #     #             c=c, alpha=alpha, linewidth=linewidth)
+        #     # p2 = p1
+
+        point1 = waypoints[0][:3]
+        point1 = np.array([point1[0], point1[1], z])
+        p1 = self.camera.project_point(point1)
+
+        ax.scatter(p1[0], p1[1],
+                   c='g', alpha=alpha, s=8)
+
+        point1 = waypoints[1][:3]
+        point1 = np.array([point1[0], point1[1], z])
+        p2 = self.camera.project_point(point1)
+
+        ax.arrow(p1[0], p1[1], p2[0] - p1[0], p2[1] - p1[1],width=4,
+                 #head_width=10, head_length=10,
+                 fc=c, ec=c, alpha=alpha,
+                 zorder=100)
 
     def _plot_box_in_image(self, image):
 

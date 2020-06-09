@@ -33,7 +33,7 @@ wrapped_env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,
                 # 'sugar_box',
                 #              'pudding_box'
                             ], #
-            num_movable_bodies=4,
+            num_movable_bodies=1,
 
 
             obj_pos_upper_space = (0 + 0.15, -0.40  + 0.15, 0.16),
@@ -124,7 +124,7 @@ wrapped_env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,
                 )
 
 
-env = wrapped_env
+
 camera_params = jaco2_push_top_view_camera
 env = ImageRawEnv(
         wrapped_env,

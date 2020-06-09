@@ -196,7 +196,7 @@ class Camera(object):
         """Deprojects a single pixel with a given depth into a 3D point.
 
         Args:
-            pixel: 2D point representing the pixel location in the image.
+            pixel: 2D point representing the pixel location in the image. [pix_u, pix_v]
             depth: Depth value at the given pixel location.
             is_world_frame: True if the 3D point is defined in the world frame,
                 False if it is defined in the camera frame.

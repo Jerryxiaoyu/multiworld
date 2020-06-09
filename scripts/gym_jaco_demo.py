@@ -10,7 +10,8 @@ from multiworld.envs.pybullet import create_image_pybullet_jaco_push_primitive_x
 from multiworld.envs.mujoco import create_image_48_sawyer_reach_xy_env_v1
 #Jaco2ObjectsPusherOneXYEnv-v0
 #Jaco2ObjectsPusherXYEnv-v0
-env = gym.make("Jaco2ObjectsPusherOneXYEnv-v0" ,
+# Jaco2ObjectsPusherOneXYSimpleEnv-v0
+env = gym.make("Jaco2ObjectsPusherOneXYSimpleEnv-v0" ,
                isRender = True,
 
                isRenderGoal=True, num_movable_bodies =1)

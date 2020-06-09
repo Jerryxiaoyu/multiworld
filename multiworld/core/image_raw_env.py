@@ -97,6 +97,16 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
         spaces['image_desired_goal'] = img_space
         spaces['image_achieved_goal'] = img_space
 
+        if self.heatmap:
+            self.heatmap_shape = self.wrapped_env.heatmap_shape
+            spaces['color_heatmap'] = Box(0, 1, (self.heatmap_shape[0] * self.heatmap_shape[1] * 3,),
+                                                          dtype=np.float32)
+            spaces['depth_heatmap'] = Box(0, 1, (self.heatmap_shape[0] * self.heatmap_shape[1],),
+                                                          dtype=np.float32)
+            spaces['valid_depth_heightmap'] = Box(0, 1, (self.heatmap_shape[0] * self.heatmap_shape[1],),
+                                                                  dtype=np.float32)
+            spaces['heatmap'] = Box(0, 1, (self.heatmap_shape[0] * self.heatmap_shape[1] * 4,),
+                                                    dtype=np.float32)
         self.observation_space = Dict(spaces)
         self.action_space = self.wrapped_env.action_space
         self.reward_type = reward_type
@@ -192,6 +202,7 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
             new_obs['color_heatmap'] = color_heatmap
             new_obs['depth_heatmap'] = depth_heatmap
             new_obs['valid_depth_heightmap'] = valid_depth_heightmap
+            new_obs['heatmap']= np.concatenate((color_heatmap, depth_heatmap[:,:,np.newaxis]), axis=2)
         return new_obs
 
     def render(self, mode='wrapped'):

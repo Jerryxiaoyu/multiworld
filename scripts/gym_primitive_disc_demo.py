@@ -15,7 +15,7 @@ from multiworld.envs.pybullet.jaco_push_primitive.jaco_push_primitive import Jac
 
 wrapped_env = gym.make("Jaco2PushPrimitiveDiscOneXYEnv-v0" ,isRender= True,
 isImageObservation= False,
-               vis_debug=True)
+   vis_debug=True)
 
 env = wrapped_env
 camera_params = jaco2_push_top_view_camera
@@ -25,6 +25,9 @@ env = ImageRawEnv(
         heatmap=True,
         normalize=False,
         reward_type='wrapped_env',
+
+        image_achieved_key ='valid_depth_heightmap',
+        goal_in_image_dict_key = 'valid_depth_heightmap',
     )
 
 obs = env.reset()
@@ -37,9 +40,10 @@ for i in range(100):
 
     #action = np.array([np.random.randint(0,200), np.random.randint(0,200), np.random.randint(0,16)])
     action = env.action_space.sample()
-    #env.visualize(action, obs)
+    #
     #time.sleep(1.5)
-
+    action = np.array([np.random.randint(0,16),0,49])
+    env.visualize(action, obs)
     obs, reward, done, info = env.step(action)
 
 
