@@ -15,6 +15,6 @@ Pillow==7.1.2
 robovat==0.1.0
 scikit_learn==0.23.0
 stl==0.0.3
-gtimer
-shapely
-transformations
+gtimer==1.0.0b5
+shapely==1.7.0
+transformations==2019.4.22
