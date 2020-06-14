@@ -864,6 +864,7 @@ register(
             isImgMask=True,
             isImgDepth=True,
             isRenderGoal= False,
+            shadow_enable=False,
 
             heightmap_resolution = 0.008,
             push_dis_unit = 0.05,
