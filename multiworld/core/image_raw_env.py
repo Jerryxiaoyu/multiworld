@@ -19,6 +19,7 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
 
             init_camera=None,
             heatmap = False,
+            goal_heatmap = False,
             normalize=False,
             image_dim = None,
             transpose = False,
@@ -64,6 +65,7 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
         self.flatten = flatten
 
         self.heatmap = heatmap
+        self.goal_heatmap = goal_heatmap
         self.im_height = self.init_camera['image_height']
         self.im_width = self.init_camera['image_width']
 
@@ -107,6 +109,10 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
                                                                   dtype=np.float32)
             spaces['heatmap'] = Box(0, 1, (self.heatmap_shape[0] * self.heatmap_shape[1] * 4,),
                                                     dtype=np.float32)
+
+        if self.goal_heatmap:
+            spaces['goal_heatmap'] = Box(0, 1, (self.heatmap_shape[0] * self.heatmap_shape[1] * 6,),
+                                    dtype=np.float32)
         self.observation_space = Dict(spaces)
         self.action_space = self.wrapped_env.action_space
         self.reward_type = reward_type
@@ -150,7 +156,7 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
         else:
             env_state = self.wrapped_env.get_env_state()
             self.wrapped_env.set_to_goal(self.wrapped_env.get_goal())
-            self._img_goal_dict = self._get_imgs_dict()
+            self._img_goal_dict = self._get_imgs_dict(goal_flag= True)
             self._img_goal = self._img_goal_dict[self.goal_dict_key]
             self.wrapped_env.set_env_state(env_state)
         return self._update_obs(obs)
@@ -164,7 +170,7 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
             obs[key] = extra_obs[key]
 
         obs['image_desired_goal'] = self._img_goal_dict[self.goal_dict_key]
-        obs['image_achieved_goal'] = obs['image_observation']
+        obs['image_achieved_goal'] = obs[self.image_achieved_key]
 
 
         return obs
@@ -174,7 +180,7 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
         rgb = images['rgb']
         return rgb
 
-    def _get_imgs_dict(self ):
+    def _get_imgs_dict(self, goal_flag= False ):
 
         images = self._wrapped_env.camera.frames()
         # image
@@ -187,7 +193,7 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
         if self.image_dim is not None:
             rgb = cv2.resize(rgb, (self.image_dim, self.image_dim), interpolation=cv2.INTER_AREA)
         if self.transpose:
-            rgb = rgb.transpose()
+            rgb = rgb.transpose((2,0,1))
         if self.normalize:
             rgb = normalize_image(rgb)
         if self.flatten:
@@ -203,6 +209,13 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
             new_obs['depth_heatmap'] = depth_heatmap
             new_obs['valid_depth_heightmap'] = valid_depth_heightmap
             new_obs['heatmap']= np.concatenate((color_heatmap, depth_heatmap[:,:,np.newaxis]), axis=2)
+
+        if self.goal_heatmap and not goal_flag:
+            delta_depth = valid_depth_heightmap - self._img_goal
+            depth_new = np.concatenate((valid_depth_heightmap[None], delta_depth[None], self._img_goal[None]), axis=0)
+            depth_new = depth_new.transpose((1, 2, 0))
+            new_obs['goal_heatmap'] = np.concatenate((color_heatmap, depth_new ), axis=2)
+
         return new_obs
 
     def render(self, mode='wrapped'):

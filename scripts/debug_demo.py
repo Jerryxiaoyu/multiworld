@@ -30,12 +30,14 @@ print(q, orn, orn2)
 print(p.getQuaternionFromEuler((math.pi,0,theta)))
 
 
-env = gym.make('Jaco2ObjectsPusherXYEnv-v0',
+env = gym.make('Jaco2ObjectsPusherOneXYSimpleEnv-v0',
                isRender= True,
-               debug=False,  # debug for camera
-               debug_joint = True, # debug for joint
+               debug=True,  # debug for camera
+               debug_joint = False, # debug for joint
                robot_info_debug= True,
 
+               isImageObservation_debug = True,
+               good_render=False,
                verbose = True)
 
 
@@ -50,7 +52,7 @@ while 1:
     for i in range(2000):
         action = np.zeros(ndim_act)
         obs, reward, done, info = env.step(action)
-        print(info["end_effector"])
+        #print(info["end_effector"])
 
         #if done:
         #    env.reset()

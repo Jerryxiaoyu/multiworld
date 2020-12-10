@@ -113,15 +113,17 @@ class GoalGridworld(GoalEnv):
         if self.state['count'] > 40:
             d = True
         #print(self.state['object_counts']['bread'])
-        #success = self.reward_function(self.init_state, self.state)>0
+
         obs = self.get_obs().flatten()
         goal_obs = self.imagine_obs(self.goal_state).flatten()
         r = self.compute_reward(obs, goal_obs, None)
+
+        success = r > -0.3
         if self.concatenated:
             return (np.concatenate((obs, goal_obs)).flatten(), r, d, 
                     {'success': success, 'count': self.state['count'], 'done':d})
         return ({'observation': obs, 'desired_goal': goal_obs, 'achieved_goal': obs}, 
-                r, d, {'success': success, 'count': self.state['count'], 'done':d})
+                r, d, {'is_success': success, 'count': self.state['count'], 'done':d})
 
 
     def get_obs(self, mode='rgb'):
@@ -174,7 +176,23 @@ class GoalGridworld(GoalEnv):
         """
         error = np.sum(np.square(achieved_goal - desired_goal))
         return -error
-        
+    def compute_rewards(self, achieved_goal, desired_goal, info):
+        """Compute the step reward. This externalizes the reward function and makes
+        it dependent on an a desired goal and the one that was achieved. If you wish to include
+        additional rewards that are independent of the goal, you can include the necessary values
+        to derive it in info and compute it accordingly.
+        Args:
+            achieved_goal (object): the goal that was achieved during execution
+            desired_goal (object): the desired goal that we asked the agent to attempt to achieve
+            info (dict): an info dictionary with additional information
+        Returns:
+            float: The reward that corresponds to the provided achieved goal w.r.t. to the desired
+            goal. Note that the following should always hold true:
+                ob, reward, done, info = env.step()
+                assert reward == env.compute_reward(ob['achieved_goal'], ob['goal'], info)
+        """
+        error = np.sum(np.square(achieved_goal - desired_goal), axis=1)
+        return -error
         
     def render(self, mode='rgb'):
         import cv2

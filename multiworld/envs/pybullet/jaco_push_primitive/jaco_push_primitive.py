@@ -163,6 +163,9 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
                                            num_RespawnObjects=None,
                                            is_fixed=True,
                                            )
+
+
+
         self.goal_order= goal_order
         self.isGoalImg = isGoalImg
 
@@ -192,6 +195,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             self.plot_res_folder = os.path.join('/home/drl/res_plot', plot_name)
             os.makedirs(self.plot_res_folder)
 
+        self._debug_goal_id = None
         Jaco2XYZEnv.__init__(self, **kwargs)
 
     def _set_observation_space(self):
@@ -245,6 +249,11 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
                 #plot_pose(pose, axis_length=0.1)
 
             self.goal_render_env.reset(movable_poses)
+
+        if self._debug_goal_id is not None:
+            self._p.removeUserDebugItem(self._debug_goal_id)
+        goal_pos = self.get_object_goal_pos(0)
+        self._debug_goal_id = self._p.addUserDebugLine(goal_pos, [goal_pos[0], goal_pos[1], goal_pos[2]+0.03], [255, 0, 0], 5)
 
         for i in range(self.INIT_SKIP_TIMESTEP):
             self._p.stepSimulation()
@@ -329,7 +338,6 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         return self._observation, reward, done, info
 
     def _termination(self ):
-
         if np.linalg.norm(self._observation['state_observation'] - self._observation['state_desired_goal']) < 0.02:
             return True, 0
         if self.terminated or self._envStepCounter > self._maxSteps:
@@ -815,7 +823,6 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
                 object_goals = np.concatenate(pos)
 
-
             else:
                 object_goals = np.concatenate([np.random.uniform(self._target_lower_space[:2],
                                                                  self._target_upper_space[:2]) for _ in range(self.num_objects)])
@@ -899,12 +906,124 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         #                                            c=c_list[itr],
         #                                            alpha=alpha)
 
+        # fiel_name = os.path.join(self.plot_res, 'debug_{}.png'.format(self._envActionSteps) )
+        # plt.savefig(fiel_name)
+
+        ##-----
+        plt.draw()
+        plt.pause(1e-3)
+
+    def visualize_sna(self, action, info):
+        MAX_STATE_PLOTS = 10
+
+
+        # Reset.
+        images = self.camera.frames()
+        rgb = images['rgb']
+        self.ax.cla()
+        self.ax.imshow(rgb)
+
+        goal_pixel = self.camera.project_point([self.state_goal[0],self.state_goal[1], 0.035], is_world_frame=True)
+        self.ax.scatter(goal_pixel[0], goal_pixel[1], c='r', alpha=1, s=8.0, marker='x')
+
+        obj_index = 0
+
+        ##-----your plot
+        states = self.get_object_pos(obj_index)
+        pixel_state = self.camera.project_point(states, is_world_frame=True )
+
+        if 'best_pred_states' in info:
+            pred_states = info['best_pred_states'] *np.array([640/64., 480/64.])
+
+
+            num_info_samples = info['num_samples']
+            max_plots = min(num_info_samples,  MAX_STATE_PLOTS)
+            for i in range(max_plots):
+                if i == 0:
+                    c = 'orange'
+                    alpha = 0.8
+                else:
+                    c = 'gold'
+                    alpha = 0.4
+                self._plot_single_pixel_state_trajectory(self.ax,
+                                     pixel_state,
+                                       pred_states[i],
+                                       #terminations[i],
+                                       c=c,
+                                       alpha=alpha)
+
+        n_hor = info['best_actions'][0].shape[0]
+
+        n_hor = 1
+        for t in range(n_hor):
+            action = info['best_actions'][0][t]
+            # plot action
+            if t ==0:
+                c = 'red'#'royalblue'
+                linewidth = 3.0
+                alpha = 0.8
+            else:
+                alpha -= 0.1
+                alpha = max(0.2, alpha)
+            waypoints = self._compute_waypoints(action)
+            self._plot_waypoints(self.ax,
+                                 waypoints,
+                                 linewidth=linewidth,
+                                 c=c,
+                                 alpha=0.5)
+
+        num_traj_itr = info['best_pred_states'].shape[0]
+        c_list =['forestgreen', 'olive', 'lawngreen', 'red', 'yellow']
+        # for itr in range(info['itr']-1):
+        #     num_traj_itr = min(num_traj_itr, MAX_STATE_PLOTS)
+        #     for i in range(num_traj_itr):
+        #         if i ==0:
+        #             alpha =0.8
+        #         else:
+        #             alpha =0.4
+        #         pred_states = info['stat_info']['traj_state_{}'.format(itr)]
+        #
+        #         self._plot_single_state_trajectory(self.ax,
+        #                                            states,
+        #                                            pred_states[i],
+        #                                            # terminations[i],
+        #                                            c=c_list[itr],
+        #                                            alpha=alpha)
+
         fiel_name = os.path.join(self.plot_res, 'debug_{}.png'.format(self._envActionSteps) )
         plt.savefig(fiel_name)
 
         ##-----
         plt.draw()
         plt.pause(1e-3)
+
+    def _plot_single_pixel_state_trajectory(self,
+                                      ax,
+                                      pixel_state, #
+                                      pred_pixel,#n nv
+                                      c='lawngreen',
+                                      alpha=1.0):
+        """
+        state : (2,)
+        pred_states :[num_steps, 3]
+        """
+        num_steps = pred_pixel.shape[0]
+        z = 0.05
+
+
+        p1 = pixel_state
+
+        for t in range(num_steps):
+
+            p2 = pred_pixel[t]
+
+
+            ax.arrow(p1[0], p1[1], p2[0] - p1[0], p2[1] - p1[1],
+                     head_width=10, head_length=10,
+                     fc=c, ec=c, alpha=alpha,
+                     zorder=100)
+
+            p1 = p2
 
     def _plot_single_state_trajectory(self,
                                       ax,

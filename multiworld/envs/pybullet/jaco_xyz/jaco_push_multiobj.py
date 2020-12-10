@@ -33,7 +33,7 @@ from multiworld.math import Pose
 from ..simulation.body import Body
 from ..simulation.objects import Objects
 
-__all__ = [ 'Jaco2BlockPusherXYZ']
+__all__ = [ 'Jaco2BlockPusherXYZ', 'Jaco2BlockPusherXYSimpleEnv']
 
 class Jaco2BlockPusherXYZ(Jaco2XYZEnv,  MultitaskEnv):
     def __init__(self,

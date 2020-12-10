@@ -33,7 +33,7 @@ def register_pybullet_envs():
                                       0, -0.5, 0.06,),
             obj_name_list=['b_cube_m', 'b_cube_w', 'b_L1', 'b_L2',
                            'b_cube_m', 'b_cube_w', 'b_L1', 'b_L2'],
-            num_movable_bodies=2,
+            num_movable_bodies=1,
             obj_pos_upper_space=(0 + 0.2, -0.25, 0.06),
             obj_pos_lower_space=(0 - 0.2, -0.55, 0.06),
             obj_max_upper_space=(0 + 0.28, -0.20, 0.4),
@@ -210,6 +210,7 @@ def register_pybullet_envs():
             addTable=True,
             table_position=[0.0000000, -0.650000, -0.59000],
             table_name='white',
+            good_render=True,
 
             # obj setting
             isRandomObjects=True,
@@ -529,6 +530,9 @@ def register_pybullet_envs():
 
             isImageObservation=False,
 
+            isImgMask=False,
+            isImgDepth=False,
+
             # obj setting
             isRandomObjects=True,
             fixed_objects_init_pos=(0, -0.3, 0.06,  # shape (3*n,)
@@ -596,7 +600,7 @@ def register_pybullet_envs():
             ## 10s traj horizon
             timeStep=0.01,
             actionRepeat=100,  # very importrant!!!
-            maxSteps=24000,  # per max 1200
+            maxSteps=24000,  # per max 1200si
             action_scale_conts=0.1,  # m
             isRender=False,
             debug=False,

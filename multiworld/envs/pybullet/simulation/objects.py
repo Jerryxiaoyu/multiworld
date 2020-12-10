@@ -176,9 +176,11 @@ class Objects(object):
 
                     self.movable_bodies.append(obj_body)
             self._reset_counter = 0
+        else:
+            self._reset_movable_obecjts()
         self._reset_counter += 1
 
-        self._reset_movable_obecjts()
+
     def _sample_body_poses(self,  num_samples, max_attemps=32):
         """Sample body poses.
 

@@ -177,7 +177,7 @@ class Camera(object):
                 False if it is defined in the camera frame.
 
         Returns:
-            pixel: 2D pixel location in the camera image.
+            pixel: 2D pixel location in the camera image. [u, v]
         """
         point = np.array(point)
 

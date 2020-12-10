@@ -35,11 +35,11 @@ from multiworld.envs.env_util import (
     get_asset_full_path,
 )
 
-
 import copy
 
 from multiworld.core.multitask_env import MultitaskEnv
 from .util.bullet_camera import create_camera
+from .cameras import jaco2_push_top_view_camera, jaco2_push_lateral_view_camera
 
 
 DEFAULT_RENDER = {
@@ -50,24 +50,7 @@ DEFAULT_RENDER = {
 "roll": 0,
 }
 
-DEFAULT_CAMERA =  {"target_pos": (0.0, -0.461, -0.004),
-                   "distance": 1,
-                   "yaw": 0,
-                   "pitch": -63.684,
-                   "roll": 0,
-                   "fov": 60,
-                   "near": 0.1,
-                   "far": 100.0,
-                   "image_width": 640,
-                   "image_height": 480,
-                   'intrinsics': [610.911, 0., 321.936, 0., 611.021, 236.665, 0., 0., 1.],
-                   'translation': None,
-                   'rotation': None,
-
-                   # camera in world pose Twc
-                   'camera_pose': {'translation': [0.0, -0.4, 0.75],
-                                   'rotation': [-math.pi, 0, 0], },  # upright
-                   }
+DEFAULT_CAMERA =  jaco2_push_top_view_camera
 
 
 UNIT_ACTION_DESCRETE = 0.002
@@ -162,7 +145,7 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
                  hard_reset=False,
 
                  # camera & image info
-
+                 isImageObservation_debug = False, # just for debug camera params
                  camera_params      =   DEFAULT_CAMERA,
                  shadow_enable      =   False,              # Bool, enable shadow in an image
                  isImgMask          =   False,              # Bool, if to enable mask mode
@@ -249,7 +232,7 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
 
         self._custom_light = False
 
-
+        self._isImageObservation_debug = isImageObservation_debug
         self._isImgMask = isImgMask
         self._isImgDepth = isImgDepth
         self._mask_flags = self._p.ER_SEGMENTATION_MASK_OBJECT_AND_LINKINDEX if self._isImgMask else self._p.ER_NO_SEGMENTATION_MASK
@@ -320,17 +303,15 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
                 self._p.connect(self._p.DIRECT)
             if self._debug:
                 # Debug sliders for moving the camera
-                self.x_slider = self._p.addUserDebugParameter("x_slider", -10, 10, self.camera_params['target_pos'][0])
-                self.y_slider = self._p.addUserDebugParameter("y_slider", -0.9, 0.2, self.camera_params['target_pos'][1])
-                self.z_slider = self._p.addUserDebugParameter("z_slider", -0.2, 0.6, self.camera_params['target_pos'][2])
-                self.dist_slider = self._p.addUserDebugParameter("cam_dist", 0.1, 0.9, self.camera_params['distance'] )
-                self.yaw_slider = self._p.addUserDebugParameter("cam_yaw", -200, 200, self.camera_params['yaw'] )
-                self.pitch_slider = self._p.addUserDebugParameter("cam_pitch", -80, -30, self.camera_params['pitch'] )
+                self.cam_x_slider = self._p.addUserDebugParameter("cam_x_slider", -0.5 , 0.5 , self.camera_params['camera_pose']['translation'][0])
+                self.cam_y_slider = self._p.addUserDebugParameter("cam_y_slider", -0.9, 0.2, self.camera_params['camera_pose']['translation'][1])
+                self.cam_z_slider = self._p.addUserDebugParameter("cam_z_slider", -0.2, 1, self.camera_params['camera_pose']['translation'][2])
+                self.cam_rotx_slider = self._p.addUserDebugParameter("cam_rotx_slider", -math.pi, math.pi, self.camera_params['camera_pose']['rotation'][0] )
+                self.cam_roty_slider = self._p.addUserDebugParameter("cam_roty_slider", -math.pi, math.pi, self.camera_params['camera_pose']['rotation'][1] )
+                self.cam_rotz_slider = self._p.addUserDebugParameter("cam_rotz_slider", -math.pi, math.pi, self.camera_params['camera_pose']['rotation'][2] )
 
             self.debug_ino_step = self._p.addUserDebugText('step: %d' % self._envStepCounter,
                                                          [-0.8, 0, 0.0], textColorRGB=[0, 0, 0], textSize=1.5 )
-
-
         else:
             self._p.connect(self._p.DIRECT)
 
@@ -339,7 +320,6 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
         ## 2. set camera
         self.initialize_camera(self.camera_params)
 
-
         ## 3. set light
         if self._custom_light:
             light_x = np.random.uniform(-3, 3)
@@ -347,7 +327,6 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
             self._p.configureDebugVisualizer(lightPosition=[light_x, light_y, 3])
 
     def initialize_camera(self, camera_params):
-
         self.camera = create_camera(self._p,
                                      camera_params['image_height'],
                                      camera_params['image_width'],
@@ -367,6 +346,17 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
                                     is_simulation=True)
         self._image_width = camera_params['image_width']
         self._image_height = camera_params['image_height']
+
+    def debug_camera(self):
+        camera_params =  copy.copy(self.camera_params)
+        camera_params['camera_pose']['translation'] = (self._p.readUserDebugParameter(self.cam_x_slider),
+                                       self._p.readUserDebugParameter(self.cam_y_slider),
+                                       self._p.readUserDebugParameter(self.cam_z_slider))
+        camera_params['camera_pose']['rotation'] = (self._p.readUserDebugParameter(self.cam_rotx_slider),
+                                                      self._p.readUserDebugParameter(self.cam_roty_slider),
+                                                      self._p.readUserDebugParameter(self.cam_rotz_slider))
+
+        self.initialize_camera(camera_params)
 
 
 
@@ -412,9 +402,6 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
         self._OnlyXYControl= self._control_mode["OnlyXY"]
         # define Obsevation Space
 
-
-
-
     def _set_observation_space(self):
         return NotImplementedError
 
@@ -433,6 +420,9 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
 
                                  useInverseKinematics=True,  # IMPORTANCE! It determines the mode of the motion.
                                  torque_control_enabled=False,
+
+
+
 
                                  is_fixed=True,
 
@@ -660,6 +650,11 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
             realAction = np.concatenate(([dx, dy, dz], orn, finger_angle))
         #t2 = time.time()
         #print('step time :', t2-t1)
+
+        if self._debug:
+            if self._isImageObservation_debug:
+                self.debug_camera()
+                img = self.get_image(mode='rgb')
         return self.step2(realAction)
 
     def step2(self, action):
@@ -703,7 +698,6 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
         reward += reward_terminal
 
         return  self._observation , reward, done, info
-
 
 
     def render(self, mode="human",  close=False, result_full=False):
