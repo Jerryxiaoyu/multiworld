@@ -46,7 +46,7 @@ class Jaco2BlockPusherXYZ(Jaco2XYZEnv,  MultitaskEnv):
                  target_lower_space=(-0.2, -0.85, 0.25),
 
                  #obj
-                 obj_name_list=[],
+                 obj_name_list=['b_cube_m'],
                  num_movable_bodies=3,
                  isRandomObjects = True,
                  fixed_objects_init_pos=[],

@@ -292,6 +292,102 @@ def register_pybullet_envs():
         )
     )
 
+    """:key
+    Like gym Fetch Push, modify timestep 
+    """
+    register(
+        id='Jaco2ObjectsPusherOneXYSimpleEnv-v1',
+        entry_point='multiworld.envs.pybullet.jaco_xyz.jaco_push_multiobj:Jaco2BlockPusherXYSimpleEnv',
+        max_episode_steps=1000,
+        kwargs=dict(
+            # env arguments
+            addTable=True,
+            table_position=[0.0000000, -0.650000, -0.59000],
+            table_name='white',
+            good_render=True,
+
+            # obj setting
+            isRandomObjects=True,
+            fixed_objects_init_pos=(0, -0.3, 0.06,  # shape (3*n,)
+                                    0, -0.5, 0.06,),
+            obj_name_list=('b_cube_m'),  # 'b_cube_w', 'b_L1', 'b_L2',
+            # 'b_cube_m', 'b_cube_w', 'b_L1', 'b_L2'
+            num_movable_bodies=1,
+            obj_pos_upper_space=(0 + 0.2, -0.25, 0.06),
+            obj_pos_lower_space=(0 - 0.2, -0.55, 0.06),
+            obj_max_upper_space=(0 + 0.28, -0.20, 0.4),
+            obj_max_lower_space=(0 - 0.28, -0.60, -0.4),
+
+            obj_euler_upper_space=(0, 0, 0),
+            obj_euler_lower_space=(0, 0, 0),
+            obj_safe_margin=0.05,
+            obj_scale_range=(1, 1),
+            obj_mass=None,
+            obj_friction=0.8,
+            use_random_rgba=True,
+            num_RespawnObjects=5,
+
+            # goal
+            isRandomGoals=True,
+            isIgnoreGoalCollision=False,
+            fixed_objects_goals=(-0.15, -0.3, 0.06,
+                                 0.15, -0.5, 0.06,),  # shape (3*n,)
+            fixed_hand_goal=(0, -0.25, 0.154),
+            target_upper_space=(0.15, -0.20, 0.06),
+            target_lower_space=(-0.15, -0.50, 0.06),
+
+            # camera
+            # camera_params = {},
+            shadow_enable=False,
+            isImgMask=False,
+            isImgDepth=False,
+
+            # robot params
+            random_robot_ee_pos=False,
+            hand_init_upper_space=(0 + 0.28, -0.2, 0.154),
+            hand_init_lower_space=(0 - 0.28, -0.6, 0.154),
+
+            # base arguments
+            kinova_type='j2s7s300_beam',
+            control_mode='pos_consXY',
+
+            ## 5s traj horizon
+            ## action control rate: 0.04s
+            timeStep=0.04,
+            actionRepeat=1,  # very importrant!!!
+            maxSteps=125,
+            action_scale_conts=0.1 / 10,  # m max 0.01m per timestep
+
+            robotHomeAngle=(
+            4.765313195362755, 3.7267309633866947, -0.16806972198770956, 1.4159912737517137, 0.1874491154963382,
+            4.02137015754993, 0.4529272987258747, 1.2138450740519722, 1.2945497717537808, 1.2945497717537808),
+
+            robot_ee_pos=(0.02, -0.35, 0.15),
+            fixed_orn=(-0.32618785, 0.94479543, 0.02328156, -0.02051954),
+            fixed_finger=1.263,
+
+            # kinova arguments
+            isLimitedWorkSpace=True,
+            hand_high=(0 + 0.3, -0.40 + 0.2, 0.4),
+            hand_low=(0 - 0.3, -0.40 - 0.2, -0.4),
+            useDynamics=False,
+
+            render_params={
+                "target_pos": (0, -0.742, 0.642),
+                "distance": 0.15,
+                "yaw": 0,
+                "pitch": -37,
+                "roll": 0,
+            },
+            stepTextPosition=[-0.55, 0, 0.3],
+
+            # debug setting
+            isRenderGoal=False,
+            isRender=False,
+            debug=False,
+
+        )
+    )
 
 
     ############---------Primitive------------------------------------

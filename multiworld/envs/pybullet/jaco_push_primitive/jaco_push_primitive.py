@@ -837,7 +837,6 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
     def visualize(self, action, info):
         MAX_STATE_PLOTS = 10
 
-
         # Reset.
         images = self.camera.frames()
         rgb = images['rgb']

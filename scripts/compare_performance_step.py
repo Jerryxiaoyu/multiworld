@@ -12,8 +12,15 @@ from multiworld.envs.mujoco import create_image_48_sawyer_reach_xy_env_v1
 # SawyerPushAndReachSmallArenaEnv-v0
 # SawyerPickupEnv-v0
 import multiworld.envs.gridworlds
-env = gym.make("FetchPush-v1" )
-#FetchPush-v1
+#env = gym.make("FetchReach-v1" )
+env = gym.make("Jaco2ObjectsPusherOneXYSimpleEnv-v1", isRender=True,
+useDynamics = False,
+
+            timeStep=0.04,
+            actionRepeat=1,  # very importrant!!!
+            maxSteps=125,
+            action_scale_conts=0.1/10,  # m
+               )
 #env = create_image_48_sawyer_reach_xy_env_v1()
 #env = MultiSawyerEnv()
 
@@ -32,7 +39,7 @@ for i in range(1000):
     if done :
         reset_cnt += 1
         env.reset()
-    env.render()
+    #env.render()
 t2 = time.time()
 
 print("time={:.5}".format(t2-t1))

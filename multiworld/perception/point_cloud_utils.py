@@ -9,12 +9,13 @@ import matplotlib.pyplot as plt
 from sklearn.neighbors import kneighbors_graph
 from sklearn import cluster as sklearn_cluster
 
-from robovat.utils.logging import logger
+#from robovat.utils.logging import logger
 
 try:
     import pcl
 except ImportError:
-    logger.warning('Failed to import pcl')
+    print("Failed to import pcl")
+    #logger.warning('Failed to import pcl')
 
 
 COLOR_MAP = ['r', 'y', 'b', 'g', 'm', 'k']
@@ -64,7 +65,8 @@ def segment_by_ids(point_cloud, segmask, body_ids, num_samples):
             point_cloud_i = downsample(point_cloud_i, num_samples)
             segmented_point_cloud[i] = point_cloud_i
         else:
-            logger.warning('No points were found for object % d.' % i)
+            raise Exception('No points were found for object % d.' % i)
+            #logger.warning('No points were found for object % d.' % i)
 
     return segmented_point_cloud
 
@@ -246,7 +248,7 @@ def show(point_cloud,
     ax.set_zlabel('Z axis')
 
     if axis_limit is None and axis_range is None:
-        ax.set_aspect('equal')
+        ax.set_aspect('auto')
     elif axis_range is not None:
         if len(point_cloud.shape) == 2:
             avg_pos = np.mean(point_cloud, axis=0)

@@ -16,7 +16,6 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
     def __init__(
             self,
             wrapped_env,
-
             init_camera=None,
             heatmap = False,
             goal_heatmap = False,
@@ -32,6 +31,7 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
             presampled_goals=None,
             non_presampled_goal_img_is_garbage=False,
             recompute_reward=True,
+            **kwargs
     ):
 
         """
@@ -173,6 +173,7 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
         obs['image_achieved_goal'] = obs[self.image_achieved_key]
 
 
+
         return obs
     def _get_rgb_img(self):
         images = self._wrapped_env.camera.frames()
@@ -181,7 +182,6 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
         return rgb
 
     def _get_imgs_dict(self, goal_flag= False ):
-
         images = self._wrapped_env.camera.frames()
         # image
         rgb = images['rgb']
@@ -227,10 +227,13 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
     """
     Multitask functions
     """
-    def get_goal(self):
+    def get_goal(self, is_depth= False, is_mask=False):
         goal = self.wrapped_env.get_goal()
         goal['desired_goal'] = self._img_goal
         goal['image_desired_goal'] = self._img_goal
+
+        goal['depth_desired_goal'] = self._img_goal_dict['depth_observation']
+        goal['mask_desired_goal'] = self._img_goal_dict['mask_observation']
         return goal
 
     def set_goal(self, goal):
@@ -295,6 +298,19 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
                 always_show_all_stats=True,
             ))
         return statistics
+
+
+
+class SegImageRawEnv(ImageRawEnv):
+    def __init__(
+            self,
+            num_obj=1,
+            **kwargs
+    ):
+        self.num_obj = num_obj
+        super().__init__(**kwargs)
+
+
 
 def normalize_image(image, dtype=np.float64):
     assert image.dtype == np.uint8

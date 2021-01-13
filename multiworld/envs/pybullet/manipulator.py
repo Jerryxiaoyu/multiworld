@@ -168,6 +168,7 @@ class Manipulator:
 
     if self._verbose:
       print("reset after ee pose: ", ee_pose_res)
+      print("reset after ee joint post", self.GetTrueMotorAngles())
 
   def print_robot_info(self):
       num_joints = self._pybullet_client.getNumJoints(self.robotUid)
@@ -237,6 +238,7 @@ class Manipulator:
     if self._verbose:
       print('reset joint angle: ', self.GetTrueMotorAngles())
       print('reset end-effortor: ', self.GetEndEffectorObersavations())
+
 
       self.print_robot_info()
 

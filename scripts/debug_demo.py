@@ -1,9 +1,5 @@
 
 
-
-
-
-
 import multiworld
 import gym
 import os
@@ -32,11 +28,13 @@ print(p.getQuaternionFromEuler((math.pi,0,theta)))
 
 env = gym.make('Jaco2ObjectsPusherOneXYSimpleEnv-v0',
                isRender= True,
-               debug=True,  # debug for camera
-               debug_joint = False, # debug for joint
+               debug=False,  # debug for camera
+               debug_joint = True, # debug for joint
                robot_info_debug= True,
 
-               isImageObservation_debug = True,
+               robotHomeAngle=(4.765313195362755, 3.7267309633866947, -0.16806972198770956, 1.4159912737517137, 0.1874491154963382, 4.02137015754993, 0.4529272987258747, 1.2138450740519722, 1.2945497717537808, 1.2945497717537808),
+               #robot_ee_pos=(0.02, -0.45, 0.15),
+               isImageObservation_debug = False,
                good_render=False,
                verbose = True)
 

@@ -764,3 +764,4 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
         return self._image_height
 
 
+
