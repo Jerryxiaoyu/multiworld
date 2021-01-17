@@ -911,6 +911,41 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         ##-----
         plt.draw()
         plt.pause(1e-3)
+    def visualize_random_action(self, action, info):
+        MAX_STATE_PLOTS = 10
+
+        # Reset.
+        images = self.camera.frames()
+        rgb = images['rgb']
+        self.ax.cla()
+        self.ax.imshow(rgb)
+
+        obj_index = 0
+
+        ##-----your plot
+        states = self.get_object_pos(obj_index)[:2]
+
+        t=0
+        # plot action
+        if t ==0:
+            c = 'red'#'royalblue'
+            linewidth = 3.0
+            alpha = 0.8
+
+        waypoints = self._compute_waypoints(action)
+        self._plot_waypoints(self.ax,
+                             waypoints,
+                             linewidth=linewidth,
+                             c=c,
+                             alpha=0.5)
+
+
+        c_list =['forestgreen', 'olive', 'lawngreen', 'red', 'yellow']
+
+
+        ##-----
+        plt.draw()
+        plt.pause(1e-3)
 
     def visualize_sna(self, action, info):
         MAX_STATE_PLOTS = 10

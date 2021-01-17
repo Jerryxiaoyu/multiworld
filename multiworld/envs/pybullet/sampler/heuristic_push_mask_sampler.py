@@ -133,6 +133,52 @@ class HeuristicPushMaskSampler(object):
         action = np.concatenate([start, motion], axis=-1)
         return action
 
+    def push_control(self, segmask, depth, body_mask_index, state_goal):
+
+        scale_mask = self._convert_mask(segmask, body_mask_index)
+
+        idx = np.argwhere(scale_mask == self.mask_body_index_list[body_mask_index])
+
+        sampled_index = np.random.randint(0, idx.shape[0], size=1)
+
+        sampled_points = idx[sampled_index]
+        sampled_points = sampled_points[:, ::-1]
+
+        base_point = sampled_points[0]
+
+        if depth.dtype == np.uint16:
+            depth = depth / 1000.
+        bp_w = self.camera.deproject_pixel(base_point, depth[base_point[1], base_point[0]], is_world_frame=True)[:2]
+
+        for i in range(self.max_attemps):
+
+            angle = np.random.uniform(-np.pi, np.pi)
+
+            dis = np.random.uniform(self.PUSH_MIN / self.PUSH_SCALE, self.PUSH_MAX / self.PUSH_SCALE)
+            assert self.PUSH_SCALE >= 1
+            push_scale = np.random.uniform(1, self.PUSH_SCALE)
+
+            start_x = dis * np.cos(angle) + bp_w[0]
+
+            if angle >= 0:
+                start_y = bp_w[1] + np.sqrt(dis ** 2 - (start_x - bp_w[0]) ** 2)
+            else:
+                start_y = bp_w[1] - np.sqrt(dis ** 2 - (start_x - bp_w[0]) ** 2)
+
+            sp_w = np.array([start_x, start_y], dtype=np.float32)
+
+            if self._check_not_inside_mask(scale_mask, sp_w):
+                ep_w = push_scale * (bp_w - sp_w) + sp_w
+                ep_w = np.array(ep_w, dtype=np.float32)
+                break
+
+            if i == self.max_attemps - 1:
+                raise Exception('HeuristicSampler did not find a good sample.')
+
+        start, motion = self._map2action(sp_w, ep_w)
+        action = np.concatenate([start, motion], axis=-1)
+        return action
+
     def _map2action(self, sp_w, ep_w):
 
         start = 1. / self.cspace_range[0:2] * (sp_w - self.cspace_offset[:2])
@@ -197,6 +243,7 @@ class HeuristicPushMaskSampler(object):
 
         waypoints = [start, end]
         return waypoints
+
 
 
 def main():

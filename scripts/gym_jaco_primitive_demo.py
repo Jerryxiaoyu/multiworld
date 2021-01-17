@@ -8,17 +8,16 @@ multiworld.register_all_envs()
 
 from multiworld.envs.pybullet import create_image_pybullet_jaco_push_primitive_xy_env_v1, create_image_pybullet_jaco_push_primitive_xyyaw_env_v1
 from multiworld.envs.mujoco import create_image_48_sawyer_reach_xy_env_v1
-## Jaco2PushPrimitiveXYEnv-v0
+
 env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,isRender=True,
                good_render=True,
                isRenderGoal=True,
 
-num_movable_bodies=4
+            num_movable_bodies=1
                )
 
 
-#env = create_image_pybullet_jaco_push_primitive_xyyaw_env_v1()
-#env = create_image_48_sawyer_reach_xy_env_v1()
+
 obs = env.reset()
 
 print("obs:", env.observation_space )

@@ -10,7 +10,9 @@ from multiworld.envs.pybullet.cameras import jaco2_push_top_view_camera
 from multiworld.core.image_raw_env import ImageRawEnv
 from multiworld.envs.pybullet import create_image_pybullet_jaco_push_primitive_xy_env_v1, create_image_pybullet_jaco_push_primitive_xyyaw_env_v1
 from multiworld.envs.mujoco import create_image_48_sawyer_reach_xy_env_v1
-## Jaco2PushPrimitiveXYEnv-v0
+
+
+#Jaco2PushPrimitiveOneXYEnv-v0
 wrapped_env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,
 # env arguments
             addTable=True,
@@ -26,13 +28,13 @@ wrapped_env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,
             isRenderGoal= False,
 
             # obj setting
-            isRandomObjects=True,
+            isRandomObjects=False,
             fixed_objects_init_pos=(-0.25, -0.3, 0.06,  # shape (3*n,)
-                                    0, -0.3, 0.06,),
-            obj_name_list=[ 'b_cube_m', 'b_cube_w','b_L1', 'b_L2'
+                                     ),
+            obj_name_list=[ 'b_L2'
                 # 'sugar_box',
                 #              'pudding_box'
-                            ], #
+                            ], # 'b_cube_m', 'b_cube_w','b_L1',
             num_movable_bodies=1,
 
 
