@@ -515,7 +515,7 @@ class Jaco2BlockPusherXYSimpleEnv(Jaco2BlockPusherXYZ):
             )
             touch_distances[touch_name] = touch_distance
         info = dict(
-            #end_effector=[ee_pos, ee_orn],
+            end_effector=[ee_pos, ee_orn],
 
             is_success=float( sum(object_distances.values()) < 0.05),
             **object_distances,

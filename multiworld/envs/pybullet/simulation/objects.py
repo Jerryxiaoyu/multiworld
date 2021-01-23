@@ -261,7 +261,6 @@ class Objects(object):
                 self.target_movable_paths += glob.glob(file_path)
             assert len(self.target_movable_paths) > 0
 
-
             for i in range(self.NUM_MOVABLE_BODIES):
                 #index = i#random.randint(0, len(self.target_movable_paths) - 1)  # for fixed object
                 index = random.randint(0, len(self.target_movable_paths) - 1)
@@ -271,9 +270,7 @@ class Objects(object):
                 pose = movable_poses[i]
                 scale = np.random.uniform(*self.OBJ_SCALE_RANGE)
                 name = 'movable_%d' % i
-
                 pose.euler = base_pose
-
 
                 # Add object.
                 obj_body = Body(self._p, urdf_path, pose, scale=scale, name=name)

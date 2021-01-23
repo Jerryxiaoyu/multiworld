@@ -61,7 +61,10 @@ from multiworld.envs.env_util import (
 from multiworld.envs.pybullet.util.utils import plot_pose, clear_visualization
 
 __all__ = ['Jaco2PushPrimitiveXY' , 'Jaco2PushPrimitiveXYyaw']
+SUCCESS_THESHOLD = 0.02
 
+DELTA_COM_X = 0.01
+DELTA_COM_Y = -0.005
 
 class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
     def __init__(self,
@@ -218,6 +221,29 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
             self.state_goal_box = self.goal_box
 
+        elif self.goal_order == ['x', 'y', 'theta']:
+            low_space = [self.objects_env.object_max_space_low[0],
+                         self.objects_env.object_max_space_low[1],
+                         -np.pi]
+            high_space = [self.objects_env.object_max_space_high[0],
+                          self.objects_env.object_max_space_high[1],
+                          np.pi]
+            self.obs_box = Box(np.tile(np.array(low_space), self.num_objects  ),
+                          np.tile(np.array(high_space), self.num_objects ))
+
+            self.state_obs_box = Box(np.tile(np.array(low_space), self.num_objects),
+                                     np.tile(np.array(high_space), self.num_objects))
+
+            low_space = [self._target_lower_space[0],
+                         self._target_lower_space[1],
+                         -np.pi]
+            high_space = [self._target_upper_space[0],
+                          self._target_upper_space[1],
+                          np.pi]
+            self.goal_box = Box(np.tile(np.array(low_space), self.num_objects),
+                                np.tile(np.array(high_space), self.num_objects))
+
+            self.state_goal_box = self.goal_box
 
         self.observation_space = Dict([
             ('observation',  self.obs_box),                  # object position [x,y]*n
@@ -234,7 +260,6 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         self.objects_env.reset()
 
         self.state_goal = self.sample_goal_for_rollout()
-
 
         if self._isRenderGoal:
             movable_poses = []
@@ -293,18 +318,22 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             depth = images['depth']
             segmask = images['segmask']
 
+
         if self.goal_order == ['x', 'y']:
             bs = []
-            orns = []
-            for body in  self.movable_bodies :
+            for body in self.movable_bodies:
                 bs.append(body.position[:2])
-                orns.append(body.orientation.euler)
+            pos = np.array(bs)
 
-            pos = np.concatenate(bs)
-            orn = np.concatenate(orns)
+            state = np.concatenate(pos)
+            state_goal = self.state_goal
+        elif self.goal_order == ['x', 'y', 'theta']:
 
-            #state =  np.concatenate((pos, orn))
-            state = pos
+            pos_orn = []
+            for body in self.movable_bodies:
+                pos_orn.append(np.concatenate((body.position[:2], np.array([body.orientation.euler[2]]))))
+
+            state =  np.array(pos_orn).flatten()
             state_goal = self.state_goal
 
         new_obs = dict(
@@ -314,6 +343,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             state_desired_goal=state_goal,   # desired goal: obj pos [x,y]*n
             achieved_goal=state,
             state_achieved_goal =state,
+
         )
         if self._isImageObservation:
             new_obs['image'] = rgb
@@ -323,11 +353,12 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
 
     def step(self, action):
-
         self._excute_action( action)
         self._envActionSteps += 1
 
         self._observation = self._get_obs()
+
+        self.check_dis_objects()
 
         info = self._get_info()
 
@@ -338,7 +369,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         return self._observation, reward, done, info
 
     def _termination(self ):
-        if np.linalg.norm(self._observation['state_observation'] - self._observation['state_desired_goal']) < 0.02:
+        if self.is_success:
             return True, 0
         if self.terminated or self._envStepCounter > self._maxSteps:
             self._observation = self._get_obs()
@@ -354,7 +385,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         if self._check_outof_range():
             self._observation = self._get_obs()
             if self.debug_info:
-                logger.warning('out of range!!!')
+                print('out of range!!!')
             return True, 0
 
         return False, 0
@@ -545,8 +576,8 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         motion = action[1, :]
 
         # Start.
-        x = start[0] * self.start_range[0]  + self.start_offset[0]
-        y = start[1] * self.start_range[1]  + self.start_offset[1]
+        x = start[0] * self.start_range[0]  + self.start_offset[0]  + DELTA_COM_X
+        y = start[1] * self.start_range[1]  + self.start_offset[1] + DELTA_COM_Y
         z = self.start_offset[2]
         angle = 0.0
 
@@ -555,8 +586,8 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         # End.
         delta_x = motion[0] * self.PUSH_DELTA_SCALE_X
         delta_y = motion[1] * self.PUSH_DELTA_SCALE_Y
-        x = x + delta_x
-        y = y + delta_y
+        x = x + delta_x + DELTA_COM_X
+        y = y + delta_y + DELTA_COM_Y
 
         x = np.clip(x, self.robot.end_effector_lower_space[0], self.robot.end_effector_upper_space[0])
         y = np.clip(y, self.robot.end_effector_lower_space[1], self.robot.end_effector_upper_space[1])
@@ -631,24 +662,46 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
         return None
 
-    def _get_info(self):
-        ee_pos, ee_orn = self.robot.GetEndEffectorObersavations()
-
+    def check_dis_objects(self):
         object_distances = {}
-        touch_distances = {}
+        object_eluler_error = {}
         for i in range(self.num_objects):
             object_name = "object%d_distance" % i
             object_distance = np.linalg.norm(
                 self.get_object_goal_pos(i) - self.get_object_pos(i)
             )
+            eluer_angle = self.get_object_goal_orn(i)[2] - self.get_object_eluer(i)[2]
+
             object_distances[object_name] = object_distance
 
-        info = dict(
-            # end_effector=[ee_pos, ee_orn],
+            if self.goal_order == ['x', 'y', 'theta']:
+                euler_error = abs(eluer_angle) * 180/np.pi
+                object_name = "object%d_euler_error" % i
+                object_eluler_error[object_name] = euler_error
 
-            success=float(  sum(object_distances.values()) < 0.06),
-            **object_distances,
-            **touch_distances,
+        self._is_success = float(sum(object_distances.values()) < SUCCESS_THESHOLD)
+        self._object_distances = object_distances
+        self._object_eluler_error = object_eluler_error
+        return  [object_distances, object_eluler_error]
+
+    @property
+    def is_success(self):
+        return self._is_success
+    @property
+    def object_distances(self):
+        return self._object_distances
+
+    @property
+    def object_eluler_error(self):
+        return self._object_eluler_error
+
+    def _get_info(self):
+        ee_pos, ee_orn = self.robot.GetEndEffectorObersavations()
+        info = dict(
+            end_effector=[ee_pos, ee_orn],
+            success=self._is_success,
+            **self.object_distances,
+            **self.object_eluler_error,
         )
 
         return info
@@ -704,6 +757,9 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
     def get_object_pos(self, i):
         return self.movable_bodies[i].position
 
+    def get_object_eluer(self, i):
+        return self.movable_bodies[i].orientation.euler
+
     def get_object_pose(self, i):
         return self.movable_bodies[i].pose
 
@@ -720,7 +776,6 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         self.state_goal = goal['state_desired_goal']
 
     def sample_goals(self, batch_size):
-
         goals = np.random.uniform(
             self.goal_box.low,
             self.goal_box.high,
@@ -743,7 +798,6 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         assert goal['state_desired_goal'].shape[0] == self.goal_dim
 
         state_goal = goal['state_desired_goal']
-
        # euler_orns = [[-math.pi,-math.pi/2,0], [0,0,0]]
        #  object_poses =[]
        #  for i in range(self.num_objects):
@@ -755,7 +809,6 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
        #          object_poses.append(Pose([pos,euler_orn]))
         object_poses = []
         for i in range(self.num_objects):
-
             pos = self.get_object_goal_pos_from_stategoal(state_goal, i)
             euler_orn =  self.get_object_goal_euler_orn_from_stategoal(state_goal, i)
             object_poses.append(Pose([pos, euler_orn]))
@@ -789,24 +842,45 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             y = self.state_goal[2*i+1]
             z = self._target_upper_space[2]
 
+        elif self.goal_order == ['x', 'y', 'theta']:
+            x = self.state_goal[3 * i]
+            y = self.state_goal[3 * i + 1]
+            z = self._target_upper_space[2]
+
         return  [x,y,z]
 
     def get_object_goal_orn(self, i):
         roll = 0
         pitch = 0
         yaw = 0
+
+        if self.goal_order == ['x', 'y', 'theta']:
+            yaw = self.state_goal[3 * i + 2]
+
         return [roll, pitch, yaw]
 
     def get_object_goal_pos_from_stategoal(self, state_goal, i):
-        x =  state_goal[2 * i]
-        y =  state_goal[2 * i + 1]
-        z = self._target_upper_space[2]
+        if self.goal_order == ['x', 'y']:
+            x =  state_goal[2*i]
+            y =  state_goal[2*i+1]
+            z = self._target_upper_space[2]
+
+        elif self.goal_order == ['x', 'y', 'theta']:
+            x =  state_goal[3 * i]
+            y =  state_goal[3 * i + 1]
+            z = self._target_upper_space[2]
+
         return  [x, y, z]
 
     def get_object_goal_euler_orn_from_stategoal(self, state_goal, i):
-        #roll = 0
-        #pitch = 0
-        yaw = self.movable_bodies[i].pose.euler[2]
+
+        roll = 0
+        pitch = 0
+        yaw = 0
+
+        if self.goal_order == ['x', 'y', 'theta']:
+            yaw = state_goal[3 * i + 2]
+
         return [0,0,yaw]
 
     def sample_goal_for_rollout(self):
@@ -814,14 +888,25 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             if not self._isIgnoreGoalCollision:
                 poses_list = self.objects_env._sample_body_poses(self.num_objects)
 
+
                 if self.goal_order ==['x', 'y']:
                     pos = []
-                    orn = []
+
                     for pose in poses_list:
                         pos.append(pose.position[:2])
-                        orn.append(pose.orientation.euler)
+                        #orn.append(pose.orientation.euler[2])
+                    pos = np.concatenate(pos)
+                    #orn = np.array(orn)
 
-                object_goals = np.concatenate(pos)
+                    object_goals = pos
+                elif self.goal_order == ['x', 'y', 'theta']:
+                    pos_orn = []
+                    for pose in poses_list:
+                        pos_orn.append(np.concatenate((pose.position[:2],  np.array([pose.orientation.euler[2]]))))
+
+                    object_goals = np.array(pos_orn).flatten()
+                else:
+                    raise NotImplementedError
 
             else:
                 object_goals = np.concatenate([np.random.uniform(self._target_lower_space[:2],
@@ -1239,7 +1324,7 @@ class Jaco2PushPrimitiveXYyaw(Jaco2PushPrimitiveXY):
 
         return object_goals
 
-    def compute_rewards(self, action, obs, info=None):
+    def compute_rewards(self, actionJaco2PushPrimitiveXY, obs, info=None):
         r = -np.linalg.norm(obs['state_observation'] - obs['state_desired_goal'], axis=1)
         return r
 
@@ -1262,7 +1347,7 @@ class Jaco2PushPrimitiveXYGoalEnv(Jaco2PushPrimitiveXY):
         return r
     
     def _get_info(self):
-        ee_pos, ee_orn = self.robot.GetEndEffectorObersavations()
+       # ee_pos, ee_orn = self.robot.GetEndEffectorObersavations()
 
         object_distances = {}
         touch_distances = {}
@@ -1278,7 +1363,7 @@ class Jaco2PushPrimitiveXYGoalEnv(Jaco2PushPrimitiveXY):
 
             is_success=float(  sum(object_distances.values()) < 0.06),
             **object_distances,
-            **touch_distances,
+           # **touch_distances,
         )
 
         return info
@@ -1318,6 +1403,29 @@ class Jaco2PushPrimitiveXYGoalAddDistEnv(Jaco2PushPrimitiveXY):
                                  np.tile(np.array(high_space), self.num_objects ))
 
             self.state_goal_box = self.goal_box
+        elif self.goal_order == ['x', 'y', 'theta']:
+            low_space = [self.objects_env.object_max_space_low[0],
+                         self.objects_env.object_max_space_low[1],
+                         -np.pi]
+            high_space = [self.objects_env.object_max_space_high[0],
+                          self.objects_env.object_max_space_high[1],
+                          np.pi]
+            obs_box = Box(np.tile(np.array(low_space), self.num_objects + 1),
+                          np.tile(np.array(high_space), self.num_objects + 1))
+
+            self.state_obs_box = Box(np.tile(np.array(low_space), self.num_objects),
+                                     np.tile(np.array(high_space), self.num_objects))
+
+            low_space = [self._target_lower_space[0],
+                         self._target_lower_space[1],
+                         -np.pi]
+            high_space = [self._target_upper_space[0],
+                          self._target_upper_space[1],
+                          np.pi]
+            self.goal_box = Box(np.tile(np.array(low_space), self.num_objects),
+                                np.tile(np.array(high_space), self.num_objects))
+
+            self.state_goal_box = self.goal_box
 
 
         self.observation_space = Dict([
@@ -1338,15 +1446,14 @@ class Jaco2PushPrimitiveXYGoalAddDistEnv(Jaco2PushPrimitiveXY):
             depth = images['depth']
             segmask = images['segmask']
 
-        if self.goal_order == ['x', 'y']:
-            bs = []
-            orns = []
-            for body in  self.movable_bodies :
-                bs.append(body.position[:2])
-                orns.append(body.orientation.euler)
+        bs = []
+        orns = []
+        for body in self.movable_bodies:
+            bs.append(body.position[:2])
+            orns.append(body.orientation.euler)
 
+        if self.goal_order == ['x', 'y']:
             pos = np.concatenate(bs)
-            orn = np.concatenate(orns)
 
             state =  np.concatenate((pos,  pos - self.state_goal))
 
@@ -1367,26 +1474,6 @@ class Jaco2PushPrimitiveXYGoalAddDistEnv(Jaco2PushPrimitiveXY):
         return new_obs
 
 
-    def _get_info(self):
-        ee_pos, ee_orn = self.robot.GetEndEffectorObersavations()
 
-        object_distances = {}
-        touch_distances = {}
-        for i in range(self.num_objects):
-            object_name = "object%d_distance" % i
-            object_distance = np.linalg.norm(
-                self.get_object_goal_pos(i) - self.get_object_pos(i)
-            )
-            object_distances[object_name] = object_distance
-
-        info = dict(
-            # end_effector=[ee_pos, ee_orn],
-
-            is_success=float(sum(object_distances.values()) < 0.05),
-            **object_distances,
-            **touch_distances,
-        )
-
-        return info
 
 

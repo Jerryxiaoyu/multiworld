@@ -12,6 +12,7 @@ import math
 import matplotlib.pyplot as plt
 from multiworld.perception.depth_utils import scale_mask
 
+Z_HEIGHT = 0.0714#0.064
 
 class HeuristicPushMaskSampler(object):
     """Heuristics push sampler from mask image."""
@@ -55,7 +56,7 @@ class HeuristicPushMaskSampler(object):
         self.last_end = None
 
         self.PUSH_DELTA_SCALE_X = self.PUSH_DELTA_SCALE_Y = 0.1
-        self.PUSH_MIN = 0.01
+        self.PUSH_MIN =  0.04
         self.PUSH_MAX = 0.1
         self.PUSH_SCALE = 2.
         self.MASK_MARGIN_SCALE = mask_scale
@@ -78,18 +79,18 @@ class HeuristicPushMaskSampler(object):
 
         return np.stack(list_action, axis=0)
 
-    def _convert_mask(self, segmask, body_mask_index):
+    def _convert_mask(self, segmask, body_mask_index, scale = 1):
         mask = segmask.copy()
         mask[mask != self.mask_body_index_list[body_mask_index]] = 0
         mask[mask == self.mask_body_index_list[body_mask_index]] = 255
 
-        scaled_mask = scale_mask(mask, self.MASK_MARGIN_SCALE, value=self.mask_body_index_list[body_mask_index])
+        scaled_mask = scale_mask(mask, scale, value=self.mask_body_index_list[body_mask_index])
 
         return scaled_mask
 
     def _sample(self, segmask, depth, body_mask_index):
 
-        scale_mask = self._convert_mask(segmask, body_mask_index)
+        scale_mask = self._convert_mask(segmask, body_mask_index, 0.85)
 
         idx = np.argwhere(scale_mask == self.mask_body_index_list[body_mask_index])
 
@@ -113,7 +114,7 @@ class HeuristicPushMaskSampler(object):
             push_scale = np.random.uniform(1, self.PUSH_SCALE)
 
             start_x = dis * np.cos(angle) + bp_w[0]
-
+            #start_y = dis * np.sin(angle) + bp_w[1]
             if angle >= 0:
                 start_y = bp_w[1] + np.sqrt(dis ** 2 - (start_x - bp_w[0]) ** 2)
             else:
@@ -121,7 +122,8 @@ class HeuristicPushMaskSampler(object):
 
             sp_w = np.array([start_x, start_y], dtype=np.float32)
 
-            if self._check_not_inside_mask(scale_mask, sp_w):
+            margin_mask =  self._convert_mask(segmask, body_mask_index, 1.3)
+            if self._check_not_inside_mask(margin_mask, sp_w):
                 ep_w = push_scale * (bp_w - sp_w) + sp_w
                 ep_w = np.array(ep_w, dtype=np.float32)
                 break
@@ -130,12 +132,16 @@ class HeuristicPushMaskSampler(object):
                 raise Exception('HeuristicSampler did not find a good sample.')
 
         start, motion = self._map2action(sp_w, ep_w)
+
         action = np.concatenate([start, motion], axis=-1)
+        action = np.clip(action, -1, 1)
+
+
         return action
 
     def push_control(self, segmask, depth, body_mask_index, state_goal):
 
-        scale_mask = self._convert_mask(segmask, body_mask_index)
+        scale_mask = self._convert_mask(segmask, body_mask_index, self.MASK_MARGIN_SCALE)
 
         idx = np.argwhere(scale_mask == self.mask_body_index_list[body_mask_index])
 
@@ -167,7 +173,7 @@ class HeuristicPushMaskSampler(object):
 
             sp_w = np.array([start_x, start_y], dtype=np.float32)
 
-            if self._check_not_inside_mask(scale_mask, sp_w):
+            if self._check_not_inside_mask(scale_mask, sp_w, scale = 1.3):
                 ep_w = push_scale * (bp_w - sp_w) + sp_w
                 ep_w = np.array(ep_w, dtype=np.float32)
                 break
@@ -177,18 +183,17 @@ class HeuristicPushMaskSampler(object):
 
         start, motion = self._map2action(sp_w, ep_w)
         action = np.concatenate([start, motion], axis=-1)
+        action = np.clip(action, -1 ,1)
         return action
 
     def _map2action(self, sp_w, ep_w):
-
         start = 1. / self.cspace_range[0:2] * (sp_w - self.cspace_offset[:2])
-
         motion = 1 / self.PUSH_MAX * (ep_w - sp_w)[:2]
 
         return start, motion
 
     def _check_not_inside_mask(self, segmask, point_world):
-        point_world = np.r_[point_world, 0.064]
+        point_world = np.r_[point_world, Z_HEIGHT]
         pixel_uv = self.camera.project_point(point_world, is_world_frame=True)
 
         if segmask[pixel_uv[1], pixel_uv[0]] in self.mask_body_index_list:
@@ -200,8 +205,8 @@ class HeuristicPushMaskSampler(object):
         waypoints = self._compute_waypoints(action)
 
         print('push length :', np.linalg.norm(np.array(waypoints[0]) - np.array(waypoints[1])))
-        sp_uv = self.camera.project_point(np.r_[waypoints[0], 0.064], is_world_frame=True)
-        ep_uv = self.camera.project_point(np.r_[waypoints[1], 0.064], is_world_frame=True)
+        sp_uv = self.camera.project_point(np.r_[waypoints[0], Z_HEIGHT], is_world_frame=True)
+        ep_uv = self.camera.project_point(np.r_[waypoints[1], Z_HEIGHT], is_world_frame=True)
 
         if rgb is not None:
             push_img = rgb.copy() if copy else rgb

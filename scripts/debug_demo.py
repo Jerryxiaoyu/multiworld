@@ -35,12 +35,22 @@ env = gym.make('Jaco2ObjectsPusherOneXYSimpleEnv-v0',
                robotHomeAngle=(4.765313195362755, 3.7267309633866947, -0.16806972198770956, 1.4159912737517137, 0.1874491154963382, 4.02137015754993, 0.4529272987258747, 1.2138450740519722, 1.2945497717537808, 1.2945497717537808),
                #robot_ee_pos=(0.02, -0.45, 0.15),
                isImageObservation_debug = False,
+
+            isRandomObjects=False,
+            fixed_objects_init_pos=(0.0275144 , -0.53437352,  0.040171873,  # shape (3*n,)
+                                   ),
+            obj_name_list=['ball_visual', ],
+            obj_scale_range=(0.01, 0.01),
+
+                useDynamics=False,
                good_render=False,
                verbose = True)
 
 
 
 obs = env.reset()
+
+
 
 ndim_act = env.action_space.shape[0]
 print("obs:", env.observation_space.shape)
@@ -50,7 +60,7 @@ while 1:
     for i in range(2000):
         action = np.zeros(ndim_act)
         obs, reward, done, info = env.step(action)
-        #print(info["end_effector"])
+        print(info["end_effector"])
 
         #if done:
         #    env.reset()
