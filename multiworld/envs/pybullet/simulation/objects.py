@@ -50,7 +50,11 @@ OBJECTS_DICT = {
 
 'box_b':  ['objects/box/box_blue.urdf',(0,0,0), []],
 
+'lshape_1':['Lshapes/auto_gen_objects_14420_5139.sdf',(0,0,0), []],
+'Lshape_train' :['Lshapes/train',(0,0,0), []],
 }
+
+
 def get_config_value(config):
     """Get the value of an configuration item.
 
@@ -114,7 +118,16 @@ class Objects(object):
         self.is_fixed=is_fixed
         self.OBJ_FIXED_POSES = obj_fixed_poses
 
+        if 'Lshape_train' in self.OBJ_NAME_LIST:
+            self.OBJ_NAME_LIST.remove('Lshape_train')
+            sdf_dir = OBJECTS_DICT['Lshape_train'][0]
+            sdf_files = os.listdir(os.path.join(ROBOT_URDF_PATH,sdf_dir))
+            for i in range(len(sdf_files)):
+                obj_name = 'lshapeTrain_{}'.format(i)
+                OBJECTS_DICT[obj_name] =  [sdf_dir+'/{}'.format(sdf_files[i]), (0, 0, 0), []]
+                self.OBJ_NAME_LIST.append(obj_name)
 
+            print('update OBJECT DICT')
 
     def _load_movable_objects(self):
         """Load movable bodies."""

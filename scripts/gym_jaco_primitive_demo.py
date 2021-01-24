@@ -12,32 +12,21 @@ env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,isRender=True,
                  good_render=True,
                 isRenderGoal=True,
 
-                num_movable_bodies=2,
+                num_movable_bodies=1,
 
 
-            isRandomObjects=False,
-            fixed_objects_init_pos=(0.0275144 , -0.53437352,  0.040171873,  # shape (3*n,)
-                                   ),
-            obj_name_list=['ball_visual', ],
-            obj_scale_range=(0.01, 0.01),
+                isRandomObjects=False,
+                fixed_objects_init_pos=(0.0275144 , -0.53437352,  0.040171873,  # shape (3*n,)
+                                       ),
+                obj_name_list=['Lshape_train', ],
+                #obj_scale_range=(0.01, 0.01),
 
-             # goal_order =['x','y', 'theta'],
-             #    obj_name_list=['b_cube_m' ],
-             #    obj_scale_range=(1, 1.5),
+                 # goal_order =['x','y', 'theta'],
+                 #    obj_name_list=['b_cube_m' ],
+                 #    obj_scale_range=(1, 1.5),
                )
 
-cspace_high = (0 + 0.25, -0.40 + 0.15, 0.154)
-cspace_low  =  (0 - 0.25, -0.40 - 0.15, 0.154)
-PUSH_MAX = 0.1
-cspace_offset = 0.5 * (cspace_high + cspace_low)
-cspace_range = 0.5 * (cspace_high - cspace_low)
 
-def _map2action( sp_w, ep_w):
-    start = 1. /  cspace_range[0:2] * (sp_w -  cspace_offset[:2])
-
-    motion = 1 /  PUSH_MAX * (ep_w - sp_w)[:2]
-
-    return start, motion
 
 obs = env.reset()
 

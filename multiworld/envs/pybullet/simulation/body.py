@@ -18,7 +18,8 @@ class Body:
                  pose,
                  scale=1.0,
                  is_static=False,
-                 name=None):
+                 name=None,
+                 ):
         """Initialize.
 
         Args:
@@ -36,9 +37,20 @@ class Body:
         self._name = name
         self._scoped_name = None
 
-        self._uid =  self._pybullet_client.loadURDF( filename, pose.position, pose.quaternion,
-                                                     useFixedBase=is_static,  useMaximalCoordinates=False,
-                                                     globalScaling=scale)
+        suffix = filename.split('.')[-1]
+        if suffix == 'urdf':
+            self._uid =  self._pybullet_client.loadURDF( filename, pose.position, pose.quaternion,
+                                                         useFixedBase=is_static,  useMaximalCoordinates=False,
+                                                         globalScaling=scale)
+        elif suffix =='sdf':
+            uids =  self._pybullet_client.loadSDF( filename,  useMaximalCoordinates=False,
+                                                         globalScaling=scale)
+            assert len(uids)  == 1, "SDF only contrains ONE body."
+            self._uid = uids[0]
+            self._pybullet_client.resetBasePositionAndOrientation(self._uid, pose.position, pose.quaternion)
+        else:
+            raise NotImplementedError
+
 
         self._initial_relative_pose = pose
         self._is_static = is_static
