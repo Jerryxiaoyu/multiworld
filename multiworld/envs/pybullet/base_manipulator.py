@@ -540,7 +540,7 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
             self.robot.Update_End_effector_pos()
 
 
-        print('final ee pose:', self.robot.GetEndEffectorObersavations())
+        #print('final ee pose:', self.robot.GetEndEffectorObersavations())
 
     def _check_reach_ee(self, target_xyzq, verbose=False):
         ee_pos, ee_orn = self.robot.GetEndEffectorObersavations()

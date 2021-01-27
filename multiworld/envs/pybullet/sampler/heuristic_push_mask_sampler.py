@@ -12,8 +12,8 @@ import math
 import matplotlib.pyplot as plt
 from multiworld.perception.depth_utils import scale_mask
 
-Z_HEIGHT = 0.0714#0.064
-
+#Z_HEIGHT = 0.0714#0.0315#0.064
+Z_HEIGHT =  0.0315#0.064
 class HeuristicPushMaskSampler(object):
     """Heuristics push sampler from mask image."""
 

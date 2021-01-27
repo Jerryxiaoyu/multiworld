@@ -168,7 +168,8 @@ class Objects(object):
                     scale = np.random.uniform(*self.OBJ_SCALE_RANGE)
                     name = 'movable_%d' % i
 
-                    pose.euler = base_pose
+                    #TODO load base pose from CONFIG, or from sample function
+                    #pose.euler = base_pose  ## TODO load base pose from CONFIG, or from sample function
 
                     # Add object.
                     obj_body = Body(self._p, urdf_path, pose, scale=scale, name=name)
@@ -283,7 +284,9 @@ class Objects(object):
                 pose = movable_poses[i]
                 scale = np.random.uniform(*self.OBJ_SCALE_RANGE)
                 name = 'movable_%d' % i
-                pose.euler = base_pose
+
+                #pose.euler = base_pose  ## TODO  use base pose or Not
+
 
                 # Add object.
                 obj_body = Body(self._p, urdf_path, pose, scale=scale, name=name)
@@ -308,14 +311,13 @@ class Objects(object):
 
         self._reset_movable_obecjts(movable_poses)
 
-    def reset(self, movable_poses=None):
+    def reset(self, movable_poses=None ):
         if self.is_fixed:
             if movable_poses is None:
                 assert len(self.OBJ_FIXED_POSES) == self.num_objects
                 movable_poses = self.OBJ_FIXED_POSES
             self._load_movable_fixed_objects(movable_poses)
         else:
-
             self._load_movable_objects()
 
 

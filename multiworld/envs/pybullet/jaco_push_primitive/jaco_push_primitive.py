@@ -63,8 +63,12 @@ from multiworld.envs.pybullet.util.utils import plot_pose, clear_visualization
 __all__ = ['Jaco2PushPrimitiveXY' , 'Jaco2PushPrimitiveXYyaw']
 SUCCESS_THESHOLD = 0.02
 
+
 DELTA_COM_X = 0.01
 DELTA_COM_Y = -0.005
+# DELTA_COM_X = 0.0
+# DELTA_COM_Y = 0
+
 
 class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
     def __init__(self,
@@ -111,12 +115,25 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
                  isRenderGoal=True,
                  vis_debug = False,
+                 is_render_object_pose = False,
+
+                 is_enable_file_pose = False,
+                 file_pose_path = None,
 
                  **kwargs):
         self.quick_init(locals())
 
         self.debug_info = debug_info
         self.vis_debug = vis_debug
+        self.is_render_object_pose = is_render_object_pose
+        self.is_enable_file_pose = False
+        if is_enable_file_pose:
+            if  goal_order == ['x', 'y']:
+                fixed_objects_goals = np.zeros((num_movable_bodies, 2))
+            elif  goal_order == ['x', 'y', 'theta']:
+                fixed_objects_goals = np.zeros((num_movable_bodies, 3))
+            else:
+                raise NotImplementedError
 
         # push primitive params
         self.PUSH_DELTA_SCALE_X = push_delta_scale_x
@@ -139,14 +156,19 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         self.num_objects = num_movable_bodies
 
         self._isRandomObjects = isRandomObjects
-        if self._isRandomObjects:
-            obj_fixed_poses = None
-        else:
-            obj_fixed_poses = []
-            assert len(fixed_objects_init_pos) == self.num_objects * 3
+        if is_enable_file_pose:
+            obj_fixed_poses =[]
             for i in range(self.num_objects):
+                obj_fixed_poses.append(Pose([[0,0,0], [0, 0, 0]]))
 
-                obj_fixed_poses.append(Pose([fixed_objects_init_pos[i * 3:i * 3 + 3], [0, 0, 0]]))
+        else:
+            if self._isRandomObjects:
+                obj_fixed_poses = None
+            else:
+                obj_fixed_poses = []
+                assert len(fixed_objects_init_pos) == self.num_objects * 3
+                for i in range(self.num_objects):
+                    obj_fixed_poses.append(Pose([fixed_objects_init_pos[i * 3:i * 3 + 3], [0, 0, 0]]))
         self.objects_env = Objects(obj_name_list, num_movable_bodies, is_fixed=(not isRandomObjects),
                                    obj_fixed_poses=obj_fixed_poses, **kwargs)
 
@@ -198,8 +220,33 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             self.plot_res_folder = os.path.join('/home/drl/res_plot', plot_name)
             os.makedirs(self.plot_res_folder)
 
-        self._debug_goal_id = None
+        self._debug_goal_ids = []
         Jaco2XYZEnv.__init__(self, **kwargs)
+
+        # (H, n, 7)
+        self.is_enable_file_pose = is_enable_file_pose
+        if self.is_enable_file_pose:
+            from multiworld.utils.io import IO
+
+            self.file_pose_path = file_pose_path
+            pose_dict = IO(self.file_pose_path).read_pickle()
+            self.object_init_pose_list = pose_dict['init_pose']
+            self.object_goal_pose_list = pose_dict['goal_pose']
+            # self.object_init_pose_list = np.array([[[0, -0.35, 0.05, 0,0,np.pi/3],
+            #                                         [-0.2, -0.35, 0.05, 0, 0, np.pi / 3],
+            #                                         ],
+            #                                        [[0.1, -0.35, 0.05, 0, 0, np.pi / 3],
+            #                                         [-0.2, -0.35, 0.05, 0, 0, np.pi / 3],
+            #                                         ]
+            #                                        ])
+            # self.object_goal_pose_list = np.array([[[0.2, -0.35, 0.05, 0, 0, 1 ],
+            #                                         [0.25, -0.35, 0.05, 0, 0, 1],
+            #                                         ],
+            #                                        [[0.25, -0.35, 0.05, 0, 0, 1],
+            #                                         [0.25, -0.35, 0.05, 0, 0, 1],
+            #                                         ]
+            #                                        ])
+        self.current_file_index = 0
 
     def _set_observation_space(self):
         if self.goal_order == ['x','y']:
@@ -207,8 +254,8 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
                          self.objects_env.object_max_space_low[1]]
             high_space = [self.objects_env.object_max_space_high[0] ,
                          self.objects_env.object_max_space_high[1]]
-            self.obs_box = Box(np.tile(np.array(low_space), self.num_objects),
-                               np.tile(np.array(high_space), self.num_objects))
+            self.obs_box = Box(np.tile(np.array(low_space), self.num_objects).reshape((-1,2)),
+                               np.tile(np.array(high_space), self.num_objects).reshape((-1,2)))
 
             self.state_obs_box = self.obs_box
 
@@ -216,8 +263,8 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
                          self._target_lower_space[1]]
             high_space = [self._target_upper_space[0],
                           self._target_upper_space[1]]
-            self.goal_box = Box(np.tile(np.array(low_space),   self.num_objects ),
-                                 np.tile(np.array(high_space), self.num_objects ))
+            self.goal_box = Box(np.tile(np.array(low_space),   self.num_objects ).reshape((-1,2)),
+                                 np.tile(np.array(high_space), self.num_objects ).reshape((-1,2)))
 
             self.state_goal_box = self.goal_box
 
@@ -228,11 +275,11 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             high_space = [self.objects_env.object_max_space_high[0],
                           self.objects_env.object_max_space_high[1],
                           np.pi]
-            self.obs_box = Box(np.tile(np.array(low_space), self.num_objects  ),
-                          np.tile(np.array(high_space), self.num_objects ))
+            self.obs_box = Box(np.tile(np.array(low_space), self.num_objects ).reshape((-1,3)),
+                          np.tile(np.array(high_space), self.num_objects ).reshape((-1,3)))
 
-            self.state_obs_box = Box(np.tile(np.array(low_space), self.num_objects),
-                                     np.tile(np.array(high_space), self.num_objects))
+            self.state_obs_box = Box(np.tile(np.array(low_space), self.num_objects).reshape((-1,3)),
+                                     np.tile(np.array(high_space), self.num_objects).reshape((-1,3)))
 
             low_space = [self._target_lower_space[0],
                          self._target_lower_space[1],
@@ -240,8 +287,8 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             high_space = [self._target_upper_space[0],
                           self._target_upper_space[1],
                           np.pi]
-            self.goal_box = Box(np.tile(np.array(low_space), self.num_objects),
-                                np.tile(np.array(high_space), self.num_objects))
+            self.goal_box = Box(np.tile(np.array(low_space), self.num_objects).reshape((-1,3)),
+                                np.tile(np.array(high_space), self.num_objects).reshape((-1,3)))
 
             self.state_goal_box = self.goal_box
 
@@ -257,28 +304,46 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
     def reset(self):
         super().reset()
-        self.objects_env.reset()
 
+        if self.is_enable_file_pose:
+            cur_pose_list = self.object_init_pose_list[self.current_file_index].flatten()
+            movable_poses =[]
+            for i in range(self.num_objects):
+                movable_poses.append(Pose([cur_pose_list[i * 6:i * 6 + 3], cur_pose_list[i * 6+3:i * 6 + 6]]))
+            # self.current_file_index += 1
+            # self.current_file_index % self.object_init_pose_list.shape[0]
+        else:
+            movable_poses = None
+        self.objects_env.reset(movable_poses=movable_poses)
         self.state_goal = self.sample_goal_for_rollout()
 
+        if self.is_enable_file_pose:
+            self.current_file_index += 1
+            self.current_file_index %= self.object_init_pose_list.shape[0]
+            print("Current_file_index: ",  self.current_file_index)
+
         if self._isRenderGoal:
-            movable_poses = []
-            # add hand pose
-            #pose = Pose([self.get_hand_goal_pos(), (0, 0, 0)])
-            #movable_poses.append(pose)
-            #clear_visualization()
-            # add obj pose
+            # movable_poses = []
+            #
+            # # add obj pose
+            # for i in range(self.num_objects):
+            #     pose = Pose([self.get_object_goal_pos(i),  self.get_object_goal_orn(i)])
+            #     movable_poses.append(pose)
+            #     #plot_pose(pose, axis_length=0.1)
+            # self.goal_render_env.reset(movable_poses)
+
+            if len(self._debug_goal_ids) != 0:
+                for i in range(len(self._debug_goal_ids)):
+                    self._p.removeUserDebugItem(self._debug_goal_ids[i])
+                self._debug_goal_ids = []
+                clear_visualization()
             for i in range(self.num_objects):
-                pose = Pose([self.get_object_goal_pos(i),  self.get_object_goal_orn(i)])
-                movable_poses.append(pose)
-                #plot_pose(pose, axis_length=0.1)
+                goal_pos = self.get_object_goal_pos(i)
+                debug_goal_id = self._p.addUserDebugLine(goal_pos, [goal_pos[0], goal_pos[1], goal_pos[2]+0.03], [255, 0, 0], 5)
+                self._debug_goal_ids.append(debug_goal_id)
+                pose = Pose([self.get_object_goal_pos(i), self.get_object_goal_orn(i)])
+                plot_pose(pose, axis_length=0.1)
 
-            self.goal_render_env.reset(movable_poses)
-
-        if self._debug_goal_id is not None:
-            self._p.removeUserDebugItem(self._debug_goal_id)
-        goal_pos = self.get_object_goal_pos(0)
-        self._debug_goal_id = self._p.addUserDebugLine(goal_pos, [goal_pos[0], goal_pos[1], goal_pos[2]+0.03], [255, 0, 0], 5)
 
         for i in range(self.INIT_SKIP_TIMESTEP):
             self._p.stepSimulation()
@@ -292,7 +357,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             self.plot_res  = os.path.join(self.plot_res_folder, str(self.vis_plot_count))
             os.makedirs(self.plot_res)
 
-        self._check_obs_dim()
+        #self._check_obs_dim()
         return  self._get_obs()
 
     def plot_goalAndObject_pose(self):
@@ -318,14 +383,13 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             depth = images['depth']
             segmask = images['segmask']
 
-
         if self.goal_order == ['x', 'y']:
             bs = []
             for body in self.movable_bodies:
                 bs.append(body.position[:2])
             pos = np.array(bs)
 
-            state = np.concatenate(pos)
+            state = np.array(pos)
             state_goal = self.state_goal
         elif self.goal_order == ['x', 'y', 'theta']:
 
@@ -333,7 +397,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             for body in self.movable_bodies:
                 pos_orn.append(np.concatenate((body.position[:2], np.array([body.orientation.euler[2]]))))
 
-            state =  np.array(pos_orn).flatten()
+            state =  np.array(pos_orn)#.flatten()
             state_goal = self.state_goal
 
         new_obs = dict(
@@ -404,7 +468,8 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             self.debug_ino_step = self._p.addUserDebugText(time_info, self._stepTextPosition,
                                                            textColorRGB=[1, 0, 0], textSize=1.5,
                                                            replaceItemUniqueId=self.debug_ino_step)
-            #self.plot_goalAndObject_pose()
+            if self.is_render_object_pose:
+                self.plot_goalAndObject_pose()
     def _excute_action(self, action):
         """
         :param action:
@@ -679,7 +744,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
                 object_name = "object%d_euler_error" % i
                 object_eluler_error[object_name] = euler_error
 
-        self._is_success = float(sum(object_distances.values()) < SUCCESS_THESHOLD)
+        self._is_success = float(sum(object_distances.values())/self.num_objects < SUCCESS_THESHOLD)
         self._object_distances = object_distances
         self._object_eluler_error = object_eluler_error
         return  [object_distances, object_eluler_error]
@@ -742,7 +807,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
     @property
     def goal_dim(self) -> int:
-        return self.state_goal_box.shape[0]
+        return self.state_goal_box.shape
 
     @property
     def movable_bodies(self):
@@ -795,7 +860,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         raise NotImplementedError
 
     def set_to_goal(self, goal):
-        assert goal['state_desired_goal'].shape[0] == self.goal_dim
+        assert goal['state_desired_goal'].shape  == self.goal_dim , "goal['state_desired_goal'].shape: ".format(goal['state_desired_goal'].shape)
 
         state_goal = goal['state_desired_goal']
        # euler_orns = [[-math.pi,-math.pi/2,0], [0,0,0]]
@@ -838,14 +903,18 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
     def get_object_goal_pos(self, i):
         if self.goal_order == ['x', 'y']:
-            x = self.state_goal[2*i]
-            y = self.state_goal[2*i+1]
-            z = self._target_upper_space[2]
+            # x = self.state_goal[2*i]
+            # y = self.state_goal[2*i+1]
+            x = self.state_goal[i, 0]
+            y = self.state_goal[i, 1]
+            z = 0.05
 
         elif self.goal_order == ['x', 'y', 'theta']:
-            x = self.state_goal[3 * i]
-            y = self.state_goal[3 * i + 1]
-            z = self._target_upper_space[2]
+            x = self.state_goal[i, 0]
+            y = self.state_goal[i, 1]
+            # x = self.state_goal[3 * i]
+            # y = self.state_goal[3 * i + 1]
+            z = 0.05
 
         return  [x,y,z]
 
@@ -855,20 +924,25 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         yaw = 0
 
         if self.goal_order == ['x', 'y', 'theta']:
-            yaw = self.state_goal[3 * i + 2]
+            #yaw = self.state_goal[3 * i + 2]
+            yaw = self.state_goal[i, 2]
 
         return [roll, pitch, yaw]
 
     def get_object_goal_pos_from_stategoal(self, state_goal, i):
         if self.goal_order == ['x', 'y']:
-            x =  state_goal[2*i]
-            y =  state_goal[2*i+1]
-            z = self._target_upper_space[2]
+            x =  state_goal[i, 0]
+            y =  state_goal[i, 1]
+            # x =  state_goal[2*i]
+            # y =  state_goal[2*i+1]
+            z = 0.05
 
         elif self.goal_order == ['x', 'y', 'theta']:
-            x =  state_goal[3 * i]
-            y =  state_goal[3 * i + 1]
-            z = self._target_upper_space[2]
+            x =  state_goal[i, 0]
+            y =  state_goal[i, 1]
+            # x =  state_goal[3 * i]
+            # y =  state_goal[3 * i + 1]
+            z = 0.05
 
         return  [x, y, z]
 
@@ -879,7 +953,8 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         yaw = 0
 
         if self.goal_order == ['x', 'y', 'theta']:
-            yaw = state_goal[3 * i + 2]
+            #yaw = state_goal[3 * i + 2]
+            yaw =  state_goal[i, 2]
 
         return [0,0,yaw]
 
@@ -888,14 +963,13 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             if not self._isIgnoreGoalCollision:
                 poses_list = self.objects_env._sample_body_poses(self.num_objects)
 
-
                 if self.goal_order ==['x', 'y']:
                     pos = []
 
                     for pose in poses_list:
                         pos.append(pose.position[:2])
                         #orn.append(pose.orientation.euler[2])
-                    pos = np.concatenate(pos)
+                    pos = np.array(pos)
                     #orn = np.array(orn)
 
                     object_goals = pos
@@ -904,17 +978,42 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
                     for pose in poses_list:
                         pos_orn.append(np.concatenate((pose.position[:2],  np.array([pose.orientation.euler[2]]))))
 
-                    object_goals = np.array(pos_orn).flatten()
+                    object_goals = np.array(pos_orn)#.flatten()
                 else:
                     raise NotImplementedError
 
             else:
-                object_goals = np.concatenate([np.random.uniform(self._target_lower_space[:2],
-                                                                 self._target_upper_space[:2]) for _ in range(self.num_objects)])
+                if self.goal_order ==['x', 'y']:
+                    object_goals = np.concatenate([np.random.uniform(self._target_lower_space[:2],
+                                                                     self._target_upper_space[:2]) for _ in
+                                                   range(self.num_objects)]).reshape((-1, 2))
+                elif self.goal_order == ['x', 'y', 'theta']:
+                    pos_goals = np.concatenate([np.random.uniform(self._target_lower_space[:2],
+                                                                     self._target_upper_space[:2]) for _ in
+                                                   range(self.num_objects)]).reshape((-1, 2))
+                    yaw_goals = np.random.uniform(-np.pi,np.pi, size=(self.num_objects, 1))
+                    object_goals = np.concatenate([pos_goals, yaw_goals], axis=-1)
+                else:
+                    raise NotImplementedError
+
         else:
-            assert len(self.fixed_objects_goals) == self.goal_dim, "require the shape of {} is {}, but got {}".format(
-                'fixed_objects_goals', self.goal_dim, len(self.fixed_objects_goals))
-            object_goals = np.array(self.fixed_objects_goals).copy()
+            if self.is_enable_file_pose:
+                if self.goal_order ==['x', 'y']:
+                    object_goals = self.object_goal_pose_list[self.current_file_index][:, :2]
+
+                elif self.goal_order == ['x', 'y', 'theta']:
+                    pos_goals = self.object_goal_pose_list[self.current_file_index][:, :2]
+                    yaw_goals = self.object_goal_pose_list[self.current_file_index][:, -1:]
+                    object_goals = np.concatenate([pos_goals, yaw_goals], axis=-1)
+                else:
+                    raise NotImplementedError
+
+            else:
+
+                # assert len(self.fixed_objects_goals) == self.goal_dim, "require the shape of {} is {}, but got {}".format(
+                #     'fixed_objects_goals', self.goal_dim, len(self.fixed_objects_goals))
+                assert  np.array(self.fixed_objects_goals).shape == self.goal_dim
+                object_goals = np.array(self.fixed_objects_goals).copy()
 
        ## object_goals = np.array([np.random.uniform( -0.06, -0.15) , np.random.uniform(-0.37,-0.45)])  hard code
         return object_goals
@@ -1042,7 +1141,8 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         self.ax.cla()
         self.ax.imshow(rgb)
 
-        goal_pixel = self.camera.project_point([self.state_goal[0],self.state_goal[1], 0.035], is_world_frame=True)
+        body_idx = 0
+        goal_pixel = self.camera.project_point([self.state_goal[body_idx, 0],self.state_goal[body_idx, 1], 0.035], is_world_frame=True)
         self.ax.scatter(goal_pixel[0], goal_pixel[1], c='r', alpha=1, s=8.0, marker='x')
 
         obj_index = 0
@@ -1198,7 +1298,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             p1 = self.camera.project_point(point1)
             if i == 0:
                 ax.scatter(p1[0], p1[1],
-                           c=c, alpha=alpha, s=2.0)
+                           c=c, alpha=alpha, s=10.0)
             else:
                 ax.plot([p1[0], p2[0]], [p1[1], p2[1]],
                         c=c, alpha=alpha, linewidth=linewidth)
@@ -1257,9 +1357,7 @@ class Jaco2PushPrimitiveXYyaw(Jaco2PushPrimitiveXY):
             orn.append(body.orientation.euler[2])
 
         pos = np.concatenate(bs)
-
         state =  np.concatenate((pos, orn)) # x y yaw
-
         state_goal = self.state_goal
 
         new_obs = dict(
@@ -1269,6 +1367,9 @@ class Jaco2PushPrimitiveXYyaw(Jaco2PushPrimitiveXY):
             state_desired_goal=state_goal,   # desired ee and obj goal :obj [x,y,yaw]*n
             achieved_goal=state,
             state_achieved_goal =state,
+
+            # object_positions = ,
+            # object_orientations = ,
         )
 
         if self._isImageObservation:
