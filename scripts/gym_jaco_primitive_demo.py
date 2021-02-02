@@ -16,7 +16,7 @@ env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,isRender=True,
 
                 num_movable_bodies=2,
 
-               table_name = 'default',
+               table_name = 'real',
 
 
                 # isRandomObjects=False,

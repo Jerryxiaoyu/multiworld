@@ -10,7 +10,7 @@ newmtl table
   Ks 0.0000 0.0000 0.0000
   Ke 0.0000 0.0000 0.0000
   map_Ka table.tga
-  map_Kd OIP.jpeg
+  map_Kd table1_Color.png
   
   
 

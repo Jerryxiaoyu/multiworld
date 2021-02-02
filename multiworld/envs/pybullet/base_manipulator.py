@@ -117,7 +117,8 @@ CONTROL_MODES_LISTS = {
 
 TABLE_UDRF_LIST = {
 'default':"objects/table/table.urdf",
-'white':"objects/table/table_white.urdf"
+'white':"objects/table/table_white.urdf",
+'real':"objects/table/table2.urdf"
 
 }
 
