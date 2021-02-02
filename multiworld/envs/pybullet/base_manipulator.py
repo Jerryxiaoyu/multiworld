@@ -463,6 +463,24 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
                                           useFixedBase=True)
                 self._p.changeDynamics(self.Uid_table, 0, lateralFriction = 1.0, spinningFriction = 0.2, rollingFriction= 0)
 
+                # r = np.random.uniform(0., 1.)
+                # g = np.random.uniform(0., 1.)
+                # b = np.random.uniform(0., 1.)
+                # rgba=[r, g, b, 1]
+                # specular=[0., 0., 0]
+                # kwargs = dict()
+                # # kwargs['physicsClientId'] = self.uid
+                # kwargs['objectUniqueId'] = self.Uid_table
+                # kwargs['linkIndex'] = -1
+                #
+                # if rgba is not None:
+                #     kwargs['rgbaColor'] = rgba
+                #
+                # if specular is not None:
+                #     kwargs['specularColor'] = specular
+                #
+                # self._p.changeVisualShape(**kwargs)
+
 
             self.build_env()
             self._p.setGravity(0, 0, -9.81)

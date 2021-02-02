@@ -744,7 +744,16 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
                 object_name = "object%d_euler_error" % i
                 object_eluler_error[object_name] = euler_error
 
-        self._is_success = float(sum(object_distances.values())/self.num_objects < SUCCESS_THESHOLD)
+        if self.goal_order == ['x', 'y']:
+            self._is_success = float(sum(object_distances.values()) / self.num_objects < SUCCESS_THESHOLD)
+        elif self.goal_order == ['x', 'y', 'theta']:
+            mean_dis = sum(object_distances.values())/self.num_objects
+            mean_angle = sum(object_eluler_error.values())/self.num_objects
+
+            self._is_success = mean_dis < SUCCESS_THESHOLD and mean_angle < 5
+        else:
+            raise NotImplementedError
+
         self._object_distances = object_distances
         self._object_eluler_error = object_eluler_error
         return  [object_distances, object_eluler_error]
@@ -1054,22 +1063,37 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         n_hor = info['best_actions'][0].shape[0]
 
         n_hor = 1
-        for t in range(n_hor):
-            action = info['best_actions'][0][t]
-            # plot action
-            if t ==0:
-                c = 'red'#'royalblue'
-                linewidth = 3.0
-                alpha = 0.8
-            else:
-                alpha -= 0.1
-                alpha = max(0.2, alpha)
-            waypoints = self._compute_waypoints(action)
-            self._plot_waypoints(self.ax,
-                                 waypoints,
-                                 linewidth=linewidth,
-                                 c=c,
-                                 alpha=0.5)
+
+        # plot action
+
+        c = 'red'  # 'royalblue'
+        linewidth = 3.0
+        alpha = 0.8
+
+        waypoints = self._compute_waypoints(action)
+        self._plot_waypoints(self.ax,
+                             waypoints,
+                             linewidth=linewidth,
+                             c=c,
+                             alpha=0.5)
+
+        # n_hor = 1
+        # for t in range(n_hor):
+        #     action = info['best_actions'][0][t]
+        #     # plot action
+        #     if t ==0:
+        #         c = 'red'#'royalblue'
+        #         linewidth = 3.0
+        #         alpha = 0.8
+        #     else:
+        #         alpha -= 0.1
+        #         alpha = max(0.2, alpha)
+        #     waypoints = self._compute_waypoints(action)
+        #     self._plot_waypoints(self.ax,
+        #                          waypoints,
+        #                          linewidth=linewidth,
+        #                          c=c,
+        #                          alpha=0.5)
 
         num_traj_itr = info['best_pred_states'].shape[0]
         c_list =['forestgreen', 'olive', 'lawngreen', 'red', 'yellow']
@@ -1288,7 +1312,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             c: Color of the lines connecting waypoints.
             alpha: Alpha value of the lines connecting waypoints.
         """
-        z = 0.05
+        z = 0.0315
 
         p1 = None
         p2 = None

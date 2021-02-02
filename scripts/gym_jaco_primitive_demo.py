@@ -16,6 +16,8 @@ env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,isRender=True,
 
                 num_movable_bodies=2,
 
+               table_name = 'default',
+
 
                 # isRandomObjects=False,
                 # fixed_objects_init_pos=(0.0275144 , -0.53437352,  0.040171873,  # shape (3*n,)
@@ -24,7 +26,7 @@ env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,isRender=True,
                 #obj_scale_range=(0.01, 0.01),
 
                 goal_order =['x','y', 'theta'],
-                obj_name_list=['b_cube_m' ],
+                obj_name_list=['sugar_box' ], #sugar_box  b_cube_m
                 obj_scale_range=(1, 1.5),
 
                 isRandomObjects=False,

@@ -11,7 +11,7 @@ import pybullet as p
 import os, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
-
+import transformations
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
@@ -170,6 +170,10 @@ class Objects(object):
 
                     #TODO load base pose from CONFIG, or from sample function
                     #pose.euler = base_pose  ## TODO load base pose from CONFIG, or from sample function
+                    base_rot_mat = Pose(value=[[0, 0, 0], self.base_eulers[index]]).matrix4
+                    rot = base_rot_mat.dot(pose.matrix4)
+                    euler = transformations.euler_from_matrix(rot)
+                    pose.euler = euler  ## TODO  use base pose or Not
 
                     # Add object.
                     obj_body = Body(self._p, urdf_path, pose, scale=scale, name=name)
@@ -285,7 +289,10 @@ class Objects(object):
                 scale = np.random.uniform(*self.OBJ_SCALE_RANGE)
                 name = 'movable_%d' % i
 
-                #pose.euler = base_pose  ## TODO  use base pose or Not
+                base_rot_mat = Pose(value=[[0, 0, 0], self.base_eulers[index]]).matrix4
+                rot = base_rot_mat.dot(pose.matrix4)
+                euler = transformations.euler_from_matrix(rot)
+                pose.euler = euler  ## TODO  use base pose or Not
 
 
                 # Add object.
