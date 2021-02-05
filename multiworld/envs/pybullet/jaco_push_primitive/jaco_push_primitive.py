@@ -411,6 +411,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
             poses = np.array(poses)
 
+
         new_obs = dict(
             observation= state,              # obj pos [x,y]*n
             state_observation=state,         # obj pos [x,y]*n
