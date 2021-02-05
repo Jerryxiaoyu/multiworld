@@ -85,6 +85,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
                  goal_order =['x','y'],
                  isGoalImg = False,
 
+                 isPoseObservation = False,
                  isImageObservation = False,
                  # obj
                  obj_name_list=[],
@@ -194,6 +195,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         self.goal_order= goal_order
         self.isGoalImg = isGoalImg
 
+        self._isPoseObservation = isPoseObservation
         self._isImageObservation =  isImageObservation
         # others
         self._skip_first = skip_first
@@ -399,6 +401,15 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
             state =  np.array(pos_orn)#.flatten()
             state_goal = self.state_goal
+        else:
+            raise NotImplementedError
+
+        if self._isPoseObservation:
+            poses = []
+            for body in self.movable_bodies:
+                poses.append(body.pose.matrix4)
+
+            poses = np.array(poses)
 
         new_obs = dict(
             observation= state,              # obj pos [x,y]*n
@@ -408,11 +419,15 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             achieved_goal=state,
             state_achieved_goal =state,
 
+
         )
         if self._isImageObservation:
             new_obs['image'] = rgb
             new_obs['depth'] = depth
             new_obs['segmask'] = segmask
+        if self._isPoseObservation:
+            #print(poses)
+            new_obs['pose'] = poses
         return new_obs
 
 

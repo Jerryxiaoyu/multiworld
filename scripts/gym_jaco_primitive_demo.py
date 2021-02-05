@@ -24,7 +24,7 @@ env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,isRender=True,
                 #                        ),
                 # obj_name_list=['Lshape_train', ],
                 #obj_scale_range=(0.01, 0.01),
-
+#isPoseObservation = True,
                 goal_order =['x','y', 'theta'],
                 obj_name_list=['sugar_box' ], #sugar_box  b_cube_m
                 obj_scale_range=(1, 1.5),
