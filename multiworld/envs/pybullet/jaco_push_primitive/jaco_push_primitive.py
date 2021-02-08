@@ -24,7 +24,7 @@ from multiworld.perception.camera import Camera
 
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
-
+import transformations
 
 DEFAULT_TARGET_POS = (-0.15, -0.75, 0.25)
 OBJECT_DEFALUT_POSITION = (0.05, -0.45, 0.25)
@@ -61,7 +61,7 @@ from multiworld.envs.env_util import (
 from multiworld.envs.pybullet.util.utils import plot_pose, clear_visualization
 
 __all__ = ['Jaco2PushPrimitiveXY' , 'Jaco2PushPrimitiveXYyaw']
-SUCCESS_THESHOLD = 0.02
+SUCCESS_THESHOLD = 0.03
 
 
 DELTA_COM_X = 0.01
@@ -113,6 +113,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
                  init_skip_timestep = 100,
                  is_debug_camera= False,
                  debug_info = False,
+                 debug_is_goal_distance = False,
 
                  isRenderGoal=True,
                  vis_debug = False,
@@ -194,6 +195,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
         self.goal_order= goal_order
         self.isGoalImg = isGoalImg
+        self.is_goal_distance = debug_is_goal_distance
 
         self._isPoseObservation = isPoseObservation
         self._isImageObservation =  isImageObservation
@@ -359,8 +361,10 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             self.plot_res  = os.path.join(self.plot_res_folder, str(self.vis_plot_count))
             os.makedirs(self.plot_res)
 
+        obs = self._get_obs()
+        self.check_dis_objects()
         #self._check_obs_dim()
-        return  self._get_obs()
+        return  obs
 
     def plot_goalAndObject_pose(self):
         clear_visualization()
@@ -450,6 +454,11 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
     def _termination(self ):
         if self.is_success:
+            mean_dis = sum(self.object_distances.values()) / self.num_objects
+            mean_angle = sum(self.object_eluler_error.values()) / self.num_objects
+
+            print("Last state: mean dis: {:.3f}, mean angle: {:.2f}".format(mean_dis, mean_angle))
+
             return True, 0
         if self.terminated or self._envStepCounter > self._maxSteps:
             self._observation = self._get_obs()
@@ -657,7 +666,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         motion = action[1, :]
 
         # Start.
-        x = start[0] * self.start_range[0]  + self.start_offset[0]  + DELTA_COM_X
+        x = start[0] * self.start_range[0]  + self.start_offset[0] + DELTA_COM_X
         y = start[1] * self.start_range[1]  + self.start_offset[1] + DELTA_COM_Y
         z = self.start_offset[2]
         angle = 0.0
@@ -766,7 +775,9 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
             mean_dis = sum(object_distances.values())/self.num_objects
             mean_angle = sum(object_eluler_error.values())/self.num_objects
 
-            self._is_success = mean_dis < SUCCESS_THESHOLD and mean_angle < 5
+            self._is_success = mean_dis < SUCCESS_THESHOLD and mean_angle < 10
+            if self.is_goal_distance:
+                print("mean dis: {:.3}, mean angle: {:.1}".format(mean_dis, mean_angle))
         else:
             raise NotImplementedError
 
@@ -901,7 +912,14 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         for i in range(self.num_objects):
             pos = self.get_object_goal_pos_from_stategoal(state_goal, i)
             euler_orn =  self.get_object_goal_euler_orn_from_stategoal(state_goal, i)
-            object_poses.append(Pose([pos, euler_orn]))
+
+            goal_pose = Pose([pos, euler_orn])
+            base_rot_mat = Pose(value=[[0, 0, 0], self.objects_env.base_eulers_list[i]]).matrix4
+            rot = base_rot_mat.dot(goal_pose.matrix4)
+            euler = transformations.euler_from_matrix(rot)
+            goal_pose.euler = euler
+
+            object_poses.append(goal_pose)
 
         self.objects_env._reset_movable_obecjts(object_poses)
 
@@ -1042,7 +1060,111 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
        ## object_goals = np.array([np.random.uniform( -0.06, -0.15) , np.random.uniform(-0.37,-0.45)])  hard code
         return object_goals
+    def visualize_cvae(self, action, info):
+        MAX_STATE_PLOTS = 10
 
+        if 'image_desired_goal' in info:
+            image_desired_goal = info['image_desired_goal']
+            images = self.camera.frames()
+            rgb = images['rgb']
+            rgb = cv2.addWeighted(rgb, 0.7, image_desired_goal, 0.3, 0.3)
+
+        else:
+            images = self.camera.frames()
+            rgb = images['rgb']
+        # Reset.
+
+        self.ax.cla()
+        self.ax.imshow(rgb)
+
+        obj_index = 0
+
+        ##-----your plot
+        #states = self.get_object_pos(obj_index)[:2]
+
+        if 'best_pred_states' in info:
+            pred_bbx = info['best_pred_states']
+
+            num_info_samples = info['num_samples']
+            max_plots = min(num_info_samples,  MAX_STATE_PLOTS)
+            for i in range(max_plots):
+                if i == 0:
+                    c = 'orange'
+                    alpha = 0.8
+                else:
+                    c = 'gold'
+                    alpha = 0.4
+                self._plot_single_bbx_trajectory(self.ax,
+
+                                       pred_bbx[i],
+                                       #terminations[i],
+                                       c=c,
+                                       alpha=alpha)
+
+
+
+        n_hor = info['best_actions'][0].shape[0]
+
+        n_hor = 1
+
+        # plot action
+
+        c = 'red'  # 'royalblue'
+        linewidth = 3.0
+        alpha = 0.8
+
+        waypoints = self._compute_waypoints(action)
+        self._plot_waypoints(self.ax,
+                             waypoints,
+                             linewidth=linewidth,
+                             c=c,
+                             alpha=0.5)
+
+        # n_hor = 1
+        # for t in range(n_hor):
+        #     action = info['best_actions'][0][t]
+        #     # plot action
+        #     if t ==0:
+        #         c = 'red'#'royalblue'
+        #         linewidth = 3.0
+        #         alpha = 0.8
+        #     else:
+        #         alpha -= 0.1
+        #         alpha = max(0.2, alpha)
+        #     waypoints = self._compute_waypoints(action)
+        #     self._plot_waypoints(self.ax,
+        #                          waypoints,
+        #                          linewidth=linewidth,
+        #                          c=c,
+        #                          alpha=0.5)
+
+        num_traj_itr = info['best_pred_states'].shape[0]
+        c_list = ['forestgreen', 'olive', 'lawngreen', 'red', 'yellow']
+        # for itr in range(info['itr']-1):
+        #     num_traj_itr = min(num_traj_itr, MAX_STATE_PLOTS)
+        #     for i in range(num_traj_itr):
+        #         if i ==0:
+        #             alpha =0.8
+        #         else:
+        #             alpha =0.4
+        #         pred_states = info['stat_info']['traj_state_{}'.format(itr)]
+        #
+        #         self._plot_single_state_trajectory(self.ax,
+        #                                            states,
+        #                                            pred_states[i],
+        #                                            # terminations[i],
+        #                                            c=c_list[itr],
+        #                                            alpha=alpha)
+
+        # fiel_name = os.path.join(self.plot_res, 'debug_{}.png'.format(self._envActionSteps) )
+        # plt.savefig(fiel_name)
+        mean_dis = sum(self.object_distances.values())/self.num_objects
+        mean_angle = sum(self.object_eluler_error.values())/self.num_objects
+
+        plt.title("mean dis: {:.3f}, mean angle: {:.2f}".format(mean_dis, mean_angle))
+        ##-----
+        plt.draw()
+        plt.pause(1e-3)
     def visualize(self, action, info):
         MAX_STATE_PLOTS = 10
 
@@ -1313,6 +1435,44 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
                      zorder=100)
             points1 = points2
             p1 = p2
+
+    def _plot_single_bbx_trajectory(self,
+                                      ax,
+
+                                      bbx,
+                                      c='lawngreen',
+                                      alpha=1.0):
+            """
+            state : (2,)
+            pred_states :[num_steps, 2]
+            """
+            num_steps = bbx.shape[0]
+            bbx = np.array(bbx*[640,480], dtype=np.int)
+
+            p1 = bbx[0]
+            for i in range(num_steps-1):
+                p2 = bbx[i+1]
+                ax.arrow(p1[0], p1[1], p2[0] - p1[0], p2[1] - p1[1],
+                         head_width=10, head_length=10,
+                         fc=c, ec=c, alpha=alpha,
+                         zorder=100)
+                p1 = p2
+
+            # p1 = self.camera.project_point(points1)
+            #
+            # for t in range(num_steps):
+            #     points2 = np.array(list(pred_states[t]) + [z])
+            #     p2 = self.camera.project_point(points2)
+            #
+            #     # if np.linalg.norm(points2 - points1) < 0.1:
+            #     #     continue
+            #
+            #     ax.arrow(p1[0], p1[1], p2[0] - p1[0], p2[1] - p1[1],
+            #              head_width=10, head_length=10,
+            #              fc=c, ec=c, alpha=alpha,
+            #              zorder=100)
+            #     points1 = points2
+            #     p1 = p2
     def _plot_waypoints(self,
                         ax,
                         waypoints,

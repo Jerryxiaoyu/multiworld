@@ -171,6 +171,7 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
 
         obs['image_desired_goal'] = self._img_goal_dict[self.goal_dict_key]
         obs['image_achieved_goal'] = obs[self.image_achieved_key]
+        obs['pointcloud_desired_goal'] = self._img_goal_dict['point_cloud']
 
 
 

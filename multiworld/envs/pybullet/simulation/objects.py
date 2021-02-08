@@ -14,7 +14,7 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 import transformations
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
-
+import json
 
 ROBOT_URDF_PATH = os.path.join(os.path.dirname(currentdir), 'assets')
 OBJECTS_DICT = {
@@ -52,6 +52,9 @@ OBJECTS_DICT = {
 
 'lshape_1':['Lshapes/auto_gen_objects_14420_5139.sdf',(0,0,0), []],
 'Lshape_train' :['Lshapes/train',(0,0,0), []],
+
+
+'shapenet':['shapenet/02876657',(0,0,0), []],
 }
 
 
@@ -113,6 +116,7 @@ class Objects(object):
 
         self._reset_counter = 0
         self.movable_bodies = []
+        self.base_eulers_list = []
         self._num_RespawnObjects = num_RespawnObjects
 
         self.is_fixed=is_fixed
@@ -129,6 +133,25 @@ class Objects(object):
 
             print('update OBJECT DICT')
 
+        self.load_shapenet_urdf2list()
+
+
+    def load_shapenet_urdf2list(self):
+        if 'shapenet' in self.OBJ_NAME_LIST:
+            self.OBJ_NAME_LIST.remove('shapenet')
+
+            self.shapenet_info = json.load(open(os.path.join(ROBOT_URDF_PATH, 'shapenet/shapenet_id.json'), 'r'))
+            self.shapenet_path = os.path.join(ROBOT_URDF_PATH, 'shapenet')
+
+
+            for cat in self.shapenet_info.keys():
+                for i, obj_id in enumerate(self.shapenet_info[cat]['object_id']):
+                    obj_name = 'shapenet_{}_{}'.format(cat, i)
+                    OBJECTS_DICT[obj_name] =  [self.load_shapenet(obj_name), (0, 0, 0), []]
+                    self.OBJ_NAME_LIST.append(obj_name)
+
+            print('update OBJECT DICT')
+
     def _load_movable_objects(self):
         """Load movable bodies."""
         if self._num_RespawnObjects is not None and self._reset_counter >= self._num_RespawnObjects:
@@ -136,6 +159,7 @@ class Objects(object):
             for body in self.movable_bodies:
                 body.remove_body()
             self.movable_bodies = []
+            self.base_eulers_list = []
 
         if len(self.movable_bodies) ==0:
             self.target_movable_paths = []
@@ -192,6 +216,7 @@ class Objects(object):
                         rolling_friction=None,
                         spinning_friction=None)
 
+                    self.base_eulers_list.append(self.base_eulers[index])
                     self.movable_bodies.append(obj_body)
             self._reset_counter = 0
         else:
@@ -253,8 +278,12 @@ class Objects(object):
         if movable_poses is None:
             movable_poses = self._sample_body_poses(self.NUM_MOVABLE_BODIES)
         for i, body in enumerate(self.movable_bodies):
+
+
             # update pose.
             body.pose= movable_poses[i]
+
+            #-------------------
 
     def _load_movable_fixed_objects(self, movable_poses):
         """Load movable bodies."""
@@ -263,6 +292,7 @@ class Objects(object):
             for body in self.movable_bodies:
                 body.remove_body()
             self.movable_bodies = []
+            self.base_eulers_list = []
 
         assert movable_poses is not None
 
@@ -313,6 +343,7 @@ class Objects(object):
                     spinning_friction=None)
 
                 self.movable_bodies.append(obj_body)
+                self.base_eulers_list.append(self.base_eulers[index])
             self._reset_counter = 0
         self._reset_counter += 1
 
@@ -364,6 +395,42 @@ class Objects(object):
         for body in self.movable_bodies:
             body.remove_body()
         self.movable_bodies =[]
+        self.base_eulers_list =[]
+
+    def load_random_shapenet(self):
+        object_cat_cur = np.random.choice(list(self.shapenet_info.keys()))
+        category_id = self.shapenet_info[object_cat_cur]['category_id']
+        tmp = np.random.choice(len(self.shapenet_info[object_cat_cur]['object_id']))
+        object_id = self.shapenet_info[object_cat_cur]['object_id'][tmp]
+        urdf_path = os.path.join(self.shapenet_path, '%s/%s/obj.urdf' % (category_id, object_id))
+
+        return urdf_path
+
+    def load_shapenet(self, object_name=None):
+        name_list = object_name.split('_')
+        if name_list[0] == 'shapenet':
+            if len(name_list) == 2:
+                category_name = name_list[1]
+                object_id = None
+            elif len(name_list) == 3:
+                category_name = name_list[1]
+                object_id = name_list[2]
+            else:
+                raise NotImplementedError
+
+            category_id = self.shapenet_info[category_name]['category_id']
+
+            if object_id is None:
+                object_id = np.random.choice(len(self.shapenet_info[category_id]['object_id']))
+
+            object_id = self.shapenet_info[category_name]['object_id'][int(object_id)]
+            urdf_path = os.path.join(self.shapenet_path, '%s/%s/obj.urdf' % (category_id, object_id))
+        else:
+            urdf_path = None
+
+        return urdf_path
+
+
 
 
 

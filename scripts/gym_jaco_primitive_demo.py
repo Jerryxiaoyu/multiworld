@@ -9,12 +9,11 @@ from multiworld.envs.pybullet import create_image_pybullet_jaco_push_primitive_x
 from multiworld.envs.mujoco import create_image_48_sawyer_reach_xy_env_v1
 
 
-
 env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,isRender=True,
-                 good_render=True,
+                good_render=True,
                 isRenderGoal=True,
 
-                num_movable_bodies=2,
+               num_movable_bodies=2,
 
                table_name = 'real',
 
@@ -26,7 +25,7 @@ env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,isRender=True,
                 #obj_scale_range=(0.01, 0.01),
 #isPoseObservation = True,
                 goal_order =['x','y', 'theta'],
-                obj_name_list=['sugar_box' ], #sugar_box  b_cube_m
+                obj_name_list=['shapenet' ], #sugar_box  b_cube_m  shapenet  sugar_box
                 obj_scale_range=(1, 1.5),
 
                 isRandomObjects=False,
@@ -41,8 +40,6 @@ env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,isRender=True,
                 obj_euler_lower_space =(0,0, -np.pi),
                 obj_euler_upper_space=(0,0,  np.pi),
                )
-
-
 
 obs = env.reset()
 
