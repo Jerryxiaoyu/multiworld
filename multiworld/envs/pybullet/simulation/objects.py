@@ -56,7 +56,7 @@ OBJECTS_DICT = {
 
 'shapenet':['shapenet/02876657',(0,0,0), []],
 }
-
+import copy
 
 def get_config_value(config):
     """Get the value of an configuration item.
@@ -133,9 +133,65 @@ class Objects(object):
 
             print('update OBJECT DICT')
 
-        self.load_shapenet_urdf2list()
+        #self.load_shapenet_urdf2list()
+
+        self.update_all_objects()
+
+    def update_all_objects(self):
+        original_list = copy.copy(self.OBJ_NAME_LIST)
+
+        for name in original_list:
+            if name == 'shapenet':
+                self.load_shapenet_urdf2list()
+            elif name == 'blocks':
+                self.load_objects_set_urdf2list(name)
+            elif name == 'ploygons':
+                self.load_objects_set_urdf2list(name)
+            else:
+                pass
+
+    def load_objects_set_urdf2list(self, name):
+        self.OBJ_NAME_LIST.remove(name)
+
+        self.object_set_info = json.load(open(os.path.join(ROBOT_URDF_PATH, '{}/{}_id.json'.format(name, name)), 'r'))
+        self.object_set_path = os.path.join(ROBOT_URDF_PATH, name)
+
+        for cat in self.object_set_info.keys():
+            for i, obj_id in enumerate(self.object_set_info[cat]['object_id']):
+                obj_name = '{}_{}_{}'.format(name, cat, i)
+                OBJECTS_DICT[obj_name] = [self.load_object_set(obj_name), (0, 0, 0), []]
+                self.OBJ_NAME_LIST.append(obj_name)
+
+        print('update OBJECT DICT')
 
 
+    def load_object_set(self, object_name):
+        """
+
+        :param object_name:
+        :return:
+        """
+        name_list = object_name.split('_')
+
+        if len(name_list) == 2:
+            category_name = name_list[1]
+            object_id = None
+        elif len(name_list) == 3:
+            category_name = name_list[1]
+            object_id = name_list[2]
+        else:
+            raise NotImplementedError
+
+        category_id = self.object_set_info[category_name]['category_id']
+
+        if object_id is None:
+            object_id = np.random.choice(len(self.object_set_info[category_id]['object_id']))
+
+        object_id = self.object_set_info[category_name]['object_id'][int(object_id)]
+        urdf_path = os.path.join(self.object_set_path, '%s/%s/obj.urdf' % (category_id, object_id))
+
+
+        return urdf_path
     def load_shapenet_urdf2list(self):
         if 'shapenet' in self.OBJ_NAME_LIST:
             self.OBJ_NAME_LIST.remove('shapenet')

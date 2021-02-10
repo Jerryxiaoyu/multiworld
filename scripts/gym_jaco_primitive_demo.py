@@ -13,7 +13,7 @@ env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,isRender=True,
                 good_render=True,
                 isRenderGoal=True,
 
-               num_movable_bodies=2,
+               num_movable_bodies=5,
 
                table_name = 'real',
 
@@ -25,17 +25,19 @@ env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,isRender=True,
                 #obj_scale_range=(0.01, 0.01),
 #isPoseObservation = True,
                 goal_order =['x','y', 'theta'],
-                obj_name_list=['shapenet' ], #sugar_box  b_cube_m  shapenet  sugar_box
+                obj_name_list=[ "ploygons", 'blocks' ], #sugar_box  b_cube_m  shapenet  sugar_box  'shapenet',
                 obj_scale_range=(1, 1.5),
 
-                isRandomObjects=False,
-                isRandomGoals=False,
-                fixed_objects_goals =[[0,0,0],[0,0,0]],
+                num_RespawnObjects=2,
 
-                isIgnoreGoalCollision=False,
-
-                target_upper_space=(0.25, -0.25, 0.06),
-                target_lower_space=(-0.25, -0.55, 0.06),
+                # isRandomObjects=False,
+                # isRandomGoals=False,
+                # fixed_objects_goals =[[0,0,0],[0,0,0]],
+                #
+                # isIgnoreGoalCollision=False,
+                #
+                # target_upper_space=(0.25, -0.25, 0.06),
+                # target_lower_space=(-0.25, -0.55, 0.06),
 
                 obj_euler_lower_space =(0,0, -np.pi),
                 obj_euler_upper_space=(0,0,  np.pi),
