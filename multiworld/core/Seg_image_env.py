@@ -82,7 +82,7 @@ class SegImageRawEnv(ImageRawEnv):
             depth_new = depth_new.transpose((1, 2, 0))
             new_obs['goal_heatmap'] = np.concatenate((color_heatmap, depth_new ), axis=2)
 
-        seg_rgbs, bbx_states = self.segImg_fun(rgb, segmask,depth_img = None, body_ids=[0], num_object= 1,
+        seg_rgbs, bbx_states = self.segImg_fun(rgb, segmask,depth_img = None, body_ids=[_ for _ in range(self.num_obj)], num_object= self.num_obj,
                                                transpose=self.transpose, normalize=self.normalize, flatten=self.flatten
                                                )
 
