@@ -122,7 +122,7 @@ class HeuristicPushMaskSampler(object):
 
             sp_w = np.array([start_x, start_y], dtype=np.float32)
 
-            margin_mask =  self._convert_mask(segmask, body_mask_index, 1.3)
+            margin_mask =  self._convert_mask(segmask, body_mask_index, 1.1)
             if self._check_not_inside_mask(margin_mask, sp_w):
                 ep_w = push_scale * (bp_w - sp_w) + sp_w
                 ep_w = np.array(ep_w, dtype=np.float32)

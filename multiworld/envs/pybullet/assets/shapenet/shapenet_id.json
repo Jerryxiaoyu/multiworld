@@ -20,19 +20,7 @@
         "global_scaling": [0.7, 0.8],
         "large_scaling": [1.1, 1.2]
     },
-    "can": {
-        "category_id": "02946921",
-        "object_id": [
-            "f4ad0b7f82c36051f51f77a6d7299806",
-            "a70947df1f1490c2a81ec39fd9664e9b",
-            "b6c4d78363d965617cb2a55fa21392b7",
-            "91a524cc9c9be4872999f92861cdea7a",
-            "96387095255f7080b7886d94372e3c76",
-            "9b1f0ddd23357e01a81ec39fd9664e9b"
-        ],
-        "global_scaling": [0.7, 0.9],
-        "large_scaling": [1.1, 1.2]
-    },
+
     "mug": {
         "category_id": "03797390",
         "object_id": [
