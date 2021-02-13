@@ -95,6 +95,8 @@ class Objects(object):
                  use_random_rgba=False,
                  num_RespawnObjects=None,
 
+                 is_fixed_order_objects=False,
+
                   **kwargs
                     ):
         self._p = p
@@ -121,6 +123,7 @@ class Objects(object):
 
         self.is_fixed=is_fixed
         self.OBJ_FIXED_POSES = obj_fixed_poses
+        self.is_fixed_order_objects = is_fixed_order_objects
 
         if 'Lshape_train' in self.OBJ_NAME_LIST:
             self.OBJ_NAME_LIST.remove('Lshape_train')
@@ -230,6 +233,7 @@ class Objects(object):
             assert len(self.target_movable_paths) > 0
 
 
+
             is_valid = False
             while not is_valid:
                 is_valid = True
@@ -239,7 +243,11 @@ class Objects(object):
                 movable_poses = self._sample_body_poses( self.NUM_MOVABLE_BODIES )
 
                 for i in range(self.NUM_MOVABLE_BODIES):
-                    index = random.randint(0, len(self.target_movable_paths)-1)
+                    if self.is_fixed_order_objects:
+                        index = i
+
+                    else:
+                        index = random.randint(0, len(self.target_movable_paths)-1)
 
                     urdf_path = self.target_movable_paths[index]
                     base_pose = self.base_eulers[index]
@@ -367,7 +375,10 @@ class Objects(object):
 
             for i in range(self.NUM_MOVABLE_BODIES):
                 #index = i#random.randint(0, len(self.target_movable_paths) - 1)  # for fixed object
-                index = random.randint(0, len(self.target_movable_paths) - 1)
+                if self.is_fixed_order_objects:
+                    index = i
+                else:
+                    index = random.randint(0, len(self.target_movable_paths) - 1)
                 urdf_path = self.target_movable_paths[index]
                 base_pose = self.base_eulers[index]
 

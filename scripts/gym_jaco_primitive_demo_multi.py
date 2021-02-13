@@ -18,21 +18,29 @@ env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,isRender=True,
                table_name = 'default',
 
 
-                # isRandomObjects=False,
-                # fixed_objects_init_pos=(0.0275144 , -0.53437352,  0.040171873,  # shape (3*n,)
-                #                        ),
+                    isRandomObjects=False,
+                    fixed_objects_init_pos=(-0.0, -0.3,  0.04 ,  # shape (3*n,)
+                                            -0.1-0.045, -0.335,  0.04 ,
+                                            ),
+
+                    fixed_objects_init_euler=[0,0,np.pi,
+                                              0,0,0
+                                              ],
                 # obj_name_list=['Lshape_train', ],
                 #obj_scale_range=(0.01, 0.01),
-#isPoseObservation = True,
+
+                #isPoseObservation = True,
                 goal_order =['x','y', 'theta'],
                 obj_name_list=[ "b_L1", 'b_L2' ], #sugar_box  b_cube_m  shapenet  sugar_box  'shapenet',
-                obj_scale_range=(1, 1.1),
+                obj_scale_range=(1, 1.0),
+                is_fixed_order_objects=True,
 
                 num_RespawnObjects=2,
 
                 # isRandomObjects=False,
-                # isRandomGoals=False,
-                # fixed_objects_goals =[[0,0,0],[0,0,0]],
+                isRandomGoals=False,
+                fixed_objects_goals =[[0.2, -0.35,np.pi],
+                                      [0.2-0.045, -0.335,0]],
                 #
                 # isIgnoreGoalCollision=False,
                 #
@@ -45,24 +53,25 @@ env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,isRender=True,
 
 obs = env.reset()
 
-
-print("obs:", env.observation_space )
-print("action:", env.action_space.shape)
-
-
-for i in range(2000):
-    n_dim_action = env.action_space.shape[0]
-    action = env.action_space.sample() # np.zeros(n_dim_action)#
-    obs, reward, done, info = env.step(action)
-    print('state:',obs['state_observation'])
-    print('state_desired_goal:', obs['state_desired_goal'])
-
-    print(info)
-    print('--------------')
-
-    if done :
-        env.reset()
-    env.render()
+while True:
+    pass
+# print("obs:", env.observation_space )
+# print("action:", env.action_space.shape)
+#
+#
+# for i in range(2000):
+#     n_dim_action = env.action_space.shape[0]
+#     action = env.action_space.sample() # np.zeros(n_dim_action)#
+#     obs, reward, done, info = env.step(action)
+#     print('state:',obs['state_observation'])
+#     print('state_desired_goal:', obs['state_desired_goal'])
+#
+#     print(info)
+#     print('--------------')
+#
+#     if done :
+#         env.reset()
+#     env.render()
 
 
 

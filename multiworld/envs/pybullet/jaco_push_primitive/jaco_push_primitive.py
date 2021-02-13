@@ -92,6 +92,8 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
                  num_movable_bodies=3,
                  isRandomObjects=True,
                  fixed_objects_init_pos=[],
+                 fixed_objects_init_euler=[0,0,0],
+
 
                  # primitive
                  push_delta_scale_x=0.1,
@@ -170,7 +172,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
                 obj_fixed_poses = []
                 assert len(fixed_objects_init_pos) == self.num_objects * 3
                 for i in range(self.num_objects):
-                    obj_fixed_poses.append(Pose([fixed_objects_init_pos[i * 3:i * 3 + 3], [0, 0, 0]]))
+                    obj_fixed_poses.append(Pose([fixed_objects_init_pos[i * 3:i * 3 + 3], fixed_objects_init_euler[i * 3:i * 3 + 3]]))
         self.objects_env = Objects(obj_name_list, num_movable_bodies, is_fixed=(not isRandomObjects),
                                    obj_fixed_poses=obj_fixed_poses, **kwargs)
 
@@ -190,8 +192,6 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
                                            num_RespawnObjects=None,
                                            is_fixed=True,
                                            )
-
-
 
         self.goal_order= goal_order
         self.isGoalImg = isGoalImg
@@ -1087,19 +1087,25 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
             num_info_samples = info['num_samples']
             max_plots = min(num_info_samples,  MAX_STATE_PLOTS)
-            for i in range(max_plots):
-                if i == 0:
-                    c = 'orange'
-                    alpha = 0.8
-                else:
-                    c = 'gold'
-                    alpha = 0.4
-                self._plot_single_bbx_trajectory(self.ax,
 
-                                       pred_bbx[i],
-                                       #terminations[i],
-                                       c=c,
-                                       alpha=alpha)
+            pred_bbx_v2 = pred_bbx.reshape((pred_bbx.shape[0],pred_bbx.shape[1], -1, 2))
+            num_obj = pred_bbx_v2.shape[-2]
+
+            for obj_idx in range(num_obj):
+                for i in range(max_plots):
+                    if i == 0:
+                        c = 'orange'
+                        alpha = 0.8
+                    else:
+                        c = 'gold'
+                        alpha = 0.4
+
+                    self._plot_single_bbx_trajectory(self.ax,
+
+                                           pred_bbx_v2[i, :, obj_idx],
+                                           #terminations[i],
+                                           c=c,
+                                           alpha=alpha)
 
 
 

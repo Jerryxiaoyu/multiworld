@@ -1,15 +1,9 @@
 <robot name="block">
   <link name="block_base_link">
-    <contact>
-      <lateral_friction value="0.2"/>
-      <rolling_friction value="0.001"/>
-      <contact_cfm value="0.0"/>
-      <contact_erp value="1.0"/>
-    </contact>
     <inertial>
       <origin rpy="0 0 0" xyz="-0.00667 0 0.015"/>
       <mass value="0.05"/>
-      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+      <inertia ixx="1.98e-05" ixy="-4.8e-06" ixz="0.0" iyy="2.62e-05" iyz="0.0" izz="3.52e-05"/>
     </inertial>
     <collision>
       
