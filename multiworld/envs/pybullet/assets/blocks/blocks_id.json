@@ -1,0 +1,23 @@
+{
+    "train": {
+        "category_id": "train",
+        "object_id": [
+ 	"blk1",
+   	"blk2",
+	"blk3",
+	"blk4",
+	"blk5",
+	"blk6",
+	"blk7",
+	"blk8",
+	"blk9",
+	"blk10",
+	"blk11",
+	"blk12",
+	"blk13"
+        ],
+        "global_scaling": [1, 1],
+        "large_scaling": [1, 1]
+    }
+
+}

@@ -1,0 +1,25 @@
+<robot name="block">
+  <link name="block_base_link">
+
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.026 0.006 0.015"/>
+      <mass value="0.5"/>
+      <inertia ixx="1.994e-05" ixy="-1.056e-05" ixz="0.0" iyy="1.994e-05" iyz="0.0" izz="3.088e-05"/>
+    </inertial>
+    <collision>
+      
+      <geometry>
+        <mesh filename="6.STL" scale="1 1 1"/>
+      </geometry>
+    </collision>
+    <visual>
+ 
+      <geometry>
+        <mesh filename="6.STL" scale="1 1 1"/>
+      </geometry>
+      <material name="tray_material">
+        <color rgba="0.1 0.2 0.6 1"/>
+      </material>
+    </visual>
+  </link>
+</robot>
