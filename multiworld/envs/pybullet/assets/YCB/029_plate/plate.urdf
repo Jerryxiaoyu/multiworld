@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<robot name="plate">
+  <link name="Link">
+
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.010006 0.001247 0.008850"/>
+       <mass value="0.070"/>
+
+       <inertia ixx="2.4698e-7" ixy="1.81e-9" ixz="1.23e-9"
+                iyy="2.4906e-7" iyz="2.18e-9"
+                izz="4.8635e-7"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+            <mesh filename="textured2.obj" scale="1 1 1"/>
+      </geometry>
+        <material name="framemat0">
+        <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+
+    <collision>
+      <geometry>
+	 	 <mesh filename="textured2.obj" scale="1 1 1"/>
+      </geometry>
+    </collision>
+  </link>
+</robot>
+

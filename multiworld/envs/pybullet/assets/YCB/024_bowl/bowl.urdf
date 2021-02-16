@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+<robot name="bowl">
+  <link name="Link">
+
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.014354 -0.045816 0.026129"/>
+       <mass value="0.0384"/>
+
+
+       <inertia ixx="7.504e-8" ixy="1.02e-9" ixz="-0.00000"
+                iyy="7.319e-8" iyz="1.07e-9"
+                izz="1.2517e-7"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+            <mesh filename="textured2.obj" scale="1 1 1"/>
+      </geometry>
+        <material name="framemat0">
+        <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+
+    <collision>
+      <geometry>
+	 	 <mesh filename="textured2.obj" scale="1 1 1"/>
+      </geometry>
+    </collision>
+  </link>
+</robot>
+

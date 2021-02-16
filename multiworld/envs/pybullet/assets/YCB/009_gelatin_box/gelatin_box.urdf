@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<robot name="gelatin_box">
+  <link name="Link">
+
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.022679 -0.007858 0.013875"/>
+       <mass value="0.085"/>
+
+       <inertia ixx="1.1687e-7" ixy="7.59e-9" ixz="2.3e-10"
+                iyy="8.586e-8" iyz="4.5e-10"
+                izz="1.8061e-7"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+            <mesh filename="textured2.obj" scale="1 1 1"/>
+      </geometry>
+        <material name="framemat0">
+        <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+
+    <collision>
+      <geometry>
+	 	 <mesh filename="textured2.obj" scale="1 1 1"/>
+      </geometry>
+    </collision>
+  </link>
+</robot>
+

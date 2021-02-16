@@ -171,7 +171,8 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
 
         obs['image_desired_goal'] = self._img_goal_dict[self.goal_dict_key]
         obs['image_achieved_goal'] = obs[self.image_achieved_key]
-        obs['pointcloud_desired_goal'] = self._img_goal_dict['point_cloud']
+        if 'point_cloud'  in self._img_goal_dict.keys():
+            obs['pointcloud_desired_goal'] = self._img_goal_dict['point_cloud']
 
 
 
@@ -314,8 +315,10 @@ class SegImageRawEnv(ImageRawEnv):
 
 
 def normalize_image(image, dtype=np.float64):
-    assert image.dtype == np.uint8
-    return dtype(image) / 255.0
+    if image.dtype == np.uint8:
+        return dtype(image) / 255.0
+    else:
+        return image
 
 def unormalize_image(image):
     assert image.dtype != np.uint8

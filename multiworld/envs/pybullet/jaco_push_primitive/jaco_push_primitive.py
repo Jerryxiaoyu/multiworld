@@ -124,6 +124,8 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
                  is_enable_file_pose = False,
                  file_pose_path = None,
 
+                 is_flatten_obs = False,
+
                  **kwargs):
         self.quick_init(locals())
 
@@ -138,6 +140,8 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
                 fixed_objects_goals = np.zeros((num_movable_bodies, 3))
             else:
                 raise NotImplementedError
+
+        self.is_flatten_obs= is_flatten_obs
 
         # push primitive params
         self.PUSH_DELTA_SCALE_X = push_delta_scale_x
@@ -415,17 +419,25 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
             poses = np.array(poses)
 
+        if self.is_flatten_obs:
+            new_obs = dict(
+                observation=state.flatten(),  # obj [x,y,yaw]*n
+                state_observation=state.flatten(),  # obj [x,y,yaw]*n
+                desired_goal=state_goal.flatten(),  # desired goal: obj [x,y,yaw]*n
+                state_desired_goal=state_goal.flatten(),  # desired ee and obj goal :obj [x,y,yaw]*n
+                achieved_goal=state.flatten(),
+                state_achieved_goal=state.flatten(),
+            )
+        else:
+            new_obs = dict(
+                observation=state,  # obj [x,y,yaw]*n
+                state_observation=state,  # obj [x,y,yaw]*n
+                desired_goal=state_goal,  # desired goal: obj [x,y,yaw]*n
+                state_desired_goal=state_goal,  # desired ee and obj goal :obj [x,y,yaw]*n
+                achieved_goal=state,
+                state_achieved_goal=state,
+            )
 
-        new_obs = dict(
-            observation= state,              # obj pos [x,y]*n
-            state_observation=state,         # obj pos [x,y]*n
-            desired_goal=state_goal,         # desired goal: obj pos [x,y]*n
-            state_desired_goal=state_goal,   # desired goal: obj pos [x,y]*n
-            achieved_goal=state,
-            state_achieved_goal =state,
-
-
-        )
         if self._isImageObservation:
             new_obs['image'] = rgb
             new_obs['depth'] = depth
@@ -799,7 +811,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
     def _get_info(self):
         ee_pos, ee_orn = self.robot.GetEndEffectorObersavations()
         info = dict(
-            end_effector=[ee_pos, ee_orn],
+           # end_effector=[ee_pos, ee_orn],
             success=self._is_success,
             **self.object_distances,
             **self.object_eluler_error,
@@ -865,7 +877,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         return self.movable_bodies[i].pose
 
     def compute_rewards(self, action, obs, info=None):
-        r = -np.linalg.norm(obs['state_observation'] - obs['state_desired_goal'], axis=1)
+        r = -np.linalg.norm(obs['achieved_goal'] - obs['desired_goal'], axis=-1)
         return r
 
     def compute_reward(self, action, obs, info=None):
@@ -1566,17 +1578,24 @@ class Jaco2PushPrimitiveXYyaw(Jaco2PushPrimitiveXY):
         state =  np.concatenate((pos, orn)) # x y yaw
         state_goal = self.state_goal
 
-        new_obs = dict(
-            observation= state,              #  obj [x,y,yaw]*n
-            state_observation=state,         # obj [x,y,yaw]*n
-            desired_goal=state_goal,         # desired goal: obj [x,y,yaw]*n
-            state_desired_goal=state_goal,   # desired ee and obj goal :obj [x,y,yaw]*n
-            achieved_goal=state,
-            state_achieved_goal =state,
-
-            # object_positions = ,
-            # object_orientations = ,
-        )
+        if self.is_flatten_obs:
+            new_obs = dict(
+                observation=state.flatten(),  # obj [x,y,yaw]*n
+                state_observation=state.flatten(),  # obj [x,y,yaw]*n
+                desired_goal=state_goal.flatten(),  # desired goal: obj [x,y,yaw]*n
+                state_desired_goal=state_goal.flatten(),  # desired ee and obj goal :obj [x,y,yaw]*n
+                achieved_goal=state.flatten(),
+                state_achieved_goal=state.flatten(),
+            )
+        else:
+            new_obs = dict(
+                observation= state,              #  obj [x,y,yaw]*n
+                state_observation=state,         # obj [x,y,yaw]*n
+                desired_goal=state_goal,         # desired goal: obj [x,y,yaw]*n
+                state_desired_goal=state_goal,   # desired ee and obj goal :obj [x,y,yaw]*n
+                achieved_goal=state,
+                state_achieved_goal =state,
+            )
 
         if self._isImageObservation:
             new_obs['image'] = rgb

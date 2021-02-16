@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<robot name="cracker_box">
+  <link name="Link">
+
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.014854 -0.014205 0.102205"/>
+       <mass value="0.33"/>
+
+       <inertia ixx="0.000013" ixy="0.00000000113" ixz="-0.00000000162"
+                iyy="0.000009" iyz="0.00000000054"
+                izz="0.000005"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+            <mesh filename="textured2.obj" scale="1 1 1"/>
+      </geometry>
+        <material name="framemat0">
+        <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+
+    <collision>
+      <geometry>
+	 	 <mesh filename="textured2.obj" scale="1 1 1"/>
+      </geometry>
+    </collision>
+  </link>
+</robot>
+

@@ -15,47 +15,10 @@ import transformations
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 import json
+from .objects_params import OBJECTS_DICT
 
 ROBOT_URDF_PATH = os.path.join(os.path.dirname(currentdir), 'assets')
-OBJECTS_DICT = {
 
-'master_chef':["YCB/002_master_chef_can/master_chef.urdf",(0,0,0), []],
-'sugar_box':["YCB/004_sugar_box/sugar_box.urdf",(math.pi,-math.pi/2,0), []],
-'tomato_soup_can':["YCB/005_tomato_soup_can/tomato_soup_can.urdf",(0,0,0), []],
-'mustard_bottle':["YCB/006_mustard_bottle/mustard_bottle.urdf",  (-math.pi/2, 0,  -math.pi/6), []],
-'pudding_box':["YCB/008_pudding_box/pudding_box.urdf",(0,0,0), []],
-'potted_meat_can':["YCB/010_potted_meat_can/potted_meat_can.urdf", (0,0,0), []],
-'banana':["YCB/011_banana/banana.urdf",(0,0,0), []],
-'apple':["YCB/013_apple/apple.urdf",(0,0,0), []],
-'cracker_box':["YCB/003_cracker_box/cracker_box.urdf", (0,-math.pi/2,0), []],
-'gelatin_box':["YCB/009_gelatin_box/gelatin_box.urdf", (0,-math.pi/2,0), []],
-'bowl':["YCB/024_bowl/bowl.urdf", (0,0,0), []],
-'mug':["YCB/025_mug/mug.urdf", (0,0,0), []],
-'plate':["YCB/029_plate/plate.urdf", (0,0,0), []],
-'rubiks_cube':["YCB/077_rubiks_cube/rubikes_cube.urdf", (0,0,0), []],
-'cups_a':["YCB/065-a_cups/cups_a.urdf", (0,0,0), []],
-
-
-'b_column': ["objects/blocks/block_column.urdf",(0,0,0), []],
-'b_semi_column': ["objects/blocks/block_semi_column.urdf",(0,0,0), []],
-'b_cube_m': ["objects/blocks/block_cube_m.urdf",(0,0,0), []],
-'b_cube_w': ["objects/blocks/block_cube_w.urdf",(0,0,0), []],
-'b_cuboid': ["objects/blocks/block_cuboid.urdf",(0,0,0), []],
-'b_cuboid2': ["objects/blocks/block_cuboid2.urdf",(math.pi/2,0,0), []],#big
-'b_L1':     ["objects/blocks/block_L1.urdf",(0,0,0), []],
-'b_L2':     ["objects/blocks/block_L2.urdf",(0,0,0), []],
-
-
-'ball_visual': ["objects/balls/ball_visual.urdf",(0,0,0), []],
-
-'box_b':  ['objects/box/box_blue.urdf',(0,0,0), []],
-
-'lshape_1':['Lshapes/auto_gen_objects_14420_5139.sdf',(0,0,0), []],
-'Lshape_train' :['Lshapes/train',(0,0,0), []],
-
-
-'shapenet':['shapenet/02876657',(0,0,0), []],
-}
 import copy
 
 def get_config_value(config):
@@ -131,7 +94,7 @@ class Objects(object):
             sdf_files = os.listdir(os.path.join(ROBOT_URDF_PATH,sdf_dir))
             for i in range(len(sdf_files)):
                 obj_name = 'lshapeTrain_{}'.format(i)
-                OBJECTS_DICT[obj_name] =  [sdf_dir+'/{}'.format(sdf_files[i]), (0, 0, 0), []]
+                OBJECTS_DICT[obj_name] =  [sdf_dir+'/{}'.format(sdf_files[i]), (0, 0, 0), [], 1]
                 self.OBJ_NAME_LIST.append(obj_name)
 
             print('update OBJECT DICT')
@@ -153,16 +116,17 @@ class Objects(object):
             else:
                 pass
 
-    def load_objects_set_urdf2list(self, name):
+    def load_objects_set_urdf2list(self, name, set_name=None):
         self.OBJ_NAME_LIST.remove(name)
 
-        self.object_set_info = json.load(open(os.path.join(ROBOT_URDF_PATH, '{}/{}_id.json'.format(name, name)), 'r'))
+        set_name = name if set_name is None else set_name
+        self.object_set_info = json.load(open(os.path.join(ROBOT_URDF_PATH, '{}/{}_id.json'.format(name, set_name)), 'r'))
         self.object_set_path = os.path.join(ROBOT_URDF_PATH, name)
 
         for cat in self.object_set_info.keys():
             for i, obj_id in enumerate(self.object_set_info[cat]['object_id']):
                 obj_name = '{}_{}_{}'.format(name, cat, i)
-                OBJECTS_DICT[obj_name] = [self.load_object_set(obj_name), (0, 0, 0), []]
+                OBJECTS_DICT[obj_name] = [self.load_object_set(obj_name), (0, 0, 0), [], 1]
                 self.OBJ_NAME_LIST.append(obj_name)
 
         print('update OBJECT DICT')
@@ -206,7 +170,7 @@ class Objects(object):
             for cat in self.shapenet_info.keys():
                 for i, obj_id in enumerate(self.shapenet_info[cat]['object_id']):
                     obj_name = 'shapenet_{}_{}'.format(cat, i)
-                    OBJECTS_DICT[obj_name] =  [self.load_shapenet(obj_name), (0, 0, 0), []]
+                    OBJECTS_DICT[obj_name] =  [self.load_shapenet(obj_name), (0, 0, 0), [],1]
                     self.OBJ_NAME_LIST.append(obj_name)
 
             print('update OBJECT DICT')
@@ -220,13 +184,16 @@ class Objects(object):
             self.movable_bodies = []
             self.base_eulers_list = []
 
+
         if len(self.movable_bodies) ==0:
             self.target_movable_paths = []
             self.base_eulers = []
+            self.base_gloable_list = []
             for obj_name in self.OBJ_NAME_LIST:
                 if not os.path.isabs(obj_name):
                     file_path = os.path.join(ROBOT_URDF_PATH, OBJECTS_DICT[obj_name][0])
                     self.base_eulers.append(OBJECTS_DICT[obj_name][1])
+                    self.base_gloable_list.append(OBJECTS_DICT[obj_name][3])
                 else:
                     file_path = obj_name
                 self.target_movable_paths += glob.glob(file_path)
@@ -262,9 +229,10 @@ class Objects(object):
                     rot = base_rot_mat.dot(pose.matrix4)
                     euler = transformations.euler_from_matrix(rot)
                     pose.euler = euler  ## TODO  use base pose or Not
+                    #print('current pose:', euler)
 
                     # Add object.
-                    obj_body = Body(self._p, urdf_path, pose, scale=scale, name=name)
+                    obj_body = Body(self._p, urdf_path, pose, scale=scale*self.base_gloable_list[index], name=name)
 
                     if self.USE_RANDOM_RGBA:
                         r = np.random.uniform(0., 1.)
@@ -357,6 +325,7 @@ class Objects(object):
                 body.remove_body()
             self.movable_bodies = []
             self.base_eulers_list = []
+            self.base_gloable_list = []
 
         assert movable_poses is not None
 
@@ -364,10 +333,12 @@ class Objects(object):
         if len(self.movable_bodies) == 0:
             self.target_movable_paths = []
             self.base_eulers = []
+            self.base_gloable_list = []
             for obj_name in self.OBJ_NAME_LIST:
                 if not os.path.isabs(obj_name):
                     file_path = os.path.join(ROBOT_URDF_PATH, OBJECTS_DICT[obj_name][0])
                     self.base_eulers.append(OBJECTS_DICT[obj_name][1])
+                    self.base_gloable_list.append(OBJECTS_DICT[obj_name][3])
                 else:
                     file_path = obj_name
                 self.target_movable_paths += glob.glob(file_path)
@@ -393,7 +364,7 @@ class Objects(object):
 
 
                 # Add object.
-                obj_body = Body(self._p, urdf_path, pose, scale=scale, name=name)
+                obj_body = Body(self._p, urdf_path, pose, scale=scale*self.base_gloable_list[index], name=name)
 
                 if self.USE_RANDOM_RGBA:
                     r = np.random.uniform(0., 1.)

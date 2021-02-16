@@ -18,15 +18,17 @@ env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,isRender=True,
                table_name = 'default',
 
 
-                # isRandomObjects=False,
-                # fixed_objects_init_pos=(0.0275144 , -0.53437352,  0.040171873,  # shape (3*n,)
-                #                        ),
+                isRandomObjects=False,
+                fixed_objects_init_pos=(0.0275144 , -0.53437352,  0.040171873,  # shape (3*n,)
+                                       ),
+
                 # obj_name_list=['Lshape_train', ],
                 #obj_scale_range=(0.01, 0.01),
 #isPoseObservation = True,
                 goal_order =['x','y', 'theta'],
-                obj_name_list=[ "b_L1", 'b_L2' ], #sugar_box  b_cube_m  shapenet  sugar_box  'shapenet',
+                obj_name_list=[ 'sugar_box', 'sugar_box', 'mustard_bottle', 'tomato_soup_can', 'pudding_box', 'potted_meat_can', 'banana', 'bowl', 'mug', 'rubiks_cube' ], #sugar_box  b_cube_m  shapenet  sugar_box  'shapenet', "b_L1", 'b_L2'
                 obj_scale_range=(1, 1.1),
+                is_fixed_order_objects=True,
 
                 num_RespawnObjects=2,
 
