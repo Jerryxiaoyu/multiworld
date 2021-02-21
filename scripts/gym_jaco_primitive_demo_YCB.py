@@ -24,11 +24,12 @@ env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,isRender=True,
 
 is_render_object_pose=True,
 
+
                 #obj_scale_range=(0.01, 0.01),
 #isPoseObservation = True,
                 goal_order =['x','y', 'theta'],
                 obj_name_list=[
-                                'banana',
+                                'blocks',
                                # 'mustard_bottle',
                                 #  'tomato_soup_can',
                                  # 'pudding_box',

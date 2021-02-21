@@ -217,6 +217,10 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
 
         # Visualization.
         if self.vis_debug:
+            import matplotlib
+            print("Env: current matplotlib", matplotlib.get_backend())
+            plt.switch_backend('TkAgg')
+
             fig = plt.figure(figsize=(8, 8))
             ax = fig.add_subplot(111)
             plt.ion()
@@ -770,7 +774,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         for i in range(self.num_objects):
             object_name = "object%d_distance" % i
             object_distance = np.linalg.norm(
-                self.get_object_goal_pos(i) - self.get_object_pos(i)
+                self.get_object_goal_pos(i)[:2] - self.get_object_pos(i)[:2]
             )
             eluer_angle = self.get_object_goal_orn(i)[2] - self.get_object_eluer(i)[2]
 

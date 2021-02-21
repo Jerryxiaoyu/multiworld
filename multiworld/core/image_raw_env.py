@@ -286,19 +286,19 @@ class ImageRawEnv(ProxyEnv, MultitaskEnv):
 
     def get_diagnostics(self, paths, **kwargs):
         statistics = self.wrapped_env.get_diagnostics(paths, **kwargs)
-        for stat_name_in_paths in ["image_dist", "image_success"]:
-            stats = get_stat_in_paths(paths, 'env_infos', stat_name_in_paths)
-            statistics.update(create_stats_ordered_dict(
-                stat_name_in_paths,
-                stats,
-                always_show_all_stats=True,
-            ))
-            final_stats = [s[-1] for s in stats]
-            statistics.update(create_stats_ordered_dict(
-                "Final " + stat_name_in_paths,
-                final_stats,
-                always_show_all_stats=True,
-            ))
+        # for stat_name_in_paths in ["image_dist", "image_success"]:
+        #     stats = get_stat_in_paths(paths, 'env_infos', stat_name_in_paths)
+        #     statistics.update(create_stats_ordered_dict(
+        #         stat_name_in_paths,
+        #         stats,
+        #         always_show_all_stats=True,
+        #     ))
+        #     final_stats = [s[-1] for s in stats]
+        #     statistics.update(create_stats_ordered_dict(
+        #         "Final " + stat_name_in_paths,
+        #         final_stats,
+        #         always_show_all_stats=True,
+        #     ))
         return statistics
 
 

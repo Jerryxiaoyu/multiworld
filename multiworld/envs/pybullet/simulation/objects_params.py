@@ -97,6 +97,28 @@ OBJECTS_DICT = {
 'shapenet_phone_1':     ["shapenet/04401088/611afaaa1671ac8cc56f78d9daf213b/obj.urdf",(0,0,0), [], 1],
 'shapenet_phone_2':     ["shapenet/04401088/b8555009f82af5da8c3645155d02fccc/obj.urdf",(0,0,0), [], 1],
 
+
+
+'blk_2':     ["blocks/train/blk2/obj.urdf",(0,0,0), [], 1],
+
+
+'lshapeN_1':['Lshapes/train/auto_gen_objects_15008_7104.sdf',(0,0,0), [], 1],
+'lshapeN_2':['Lshapes/train/auto_gen_objects_15008_9471.sdf',(0,0,0), [], 1],
+'lshapeN_3':['Lshapes/train/auto_gen_objects_15008_19475.sdf',(0,0,0), [], 1],
+'lshapeN_4':['Lshapes/train/auto_gen_objects_15008_30658.sdf',(0,0,0), [], 1],
+'lshapeN_5':['Lshapes/train/auto_gen_objects_15008_37148.sdf',(0,0,0), [], 1],
+'lshapeN_6':['Lshapes/train/auto_gen_objects_15008_49324.sdf',(0,0,0), [], 1],
+'lshapeN_7':['Lshapes/train/auto_gen_objects_15008_60691.sdf',(0,0,0), [], 1],
+'lshapeN_8':['Lshapes/train/auto_gen_objects_15008_65696.sdf',(0,0,0), [], 1],
+# auto_gen_objects_15008_7104.sdf
+# auto_gen_objects_15008_9471.sdf
+# auto_gen_objects_15008_19475.sdf
+# auto_gen_objects_15008_30658.sdf
+# auto_gen_objects_15008_37148.sdf
+# auto_gen_objects_15008_49324.sdf
+# auto_gen_objects_15008_60691.sdf
+# auto_gen_objects_15008_65696.sdf
+
 }
 
 

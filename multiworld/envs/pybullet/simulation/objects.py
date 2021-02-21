@@ -80,6 +80,7 @@ class Objects(object):
         self.OBJ_FRICTION = obj_friction
 
         self._reset_counter = 0
+        self._global_counter = 0
         self.movable_bodies = []
         self.base_eulers_list = []
         self._num_RespawnObjects = num_RespawnObjects
@@ -211,7 +212,10 @@ class Objects(object):
 
                 for i in range(self.NUM_MOVABLE_BODIES):
                     if self.is_fixed_order_objects:
-                        index = i
+                        if self._num_RespawnObjects is None:
+                            index = i
+                        else:
+                            index = min(self._global_counter // self._num_RespawnObjects, len(self.OBJ_NAME_LIST))
 
                     else:
                         index = random.randint(0, len(self.target_movable_paths)-1)
@@ -254,6 +258,7 @@ class Objects(object):
         else:
             self._reset_movable_obecjts()
         self._reset_counter += 1
+        self._global_counter += 1
 
 
     def _sample_body_poses(self,  num_samples, max_attemps=32):
@@ -347,7 +352,10 @@ class Objects(object):
             for i in range(self.NUM_MOVABLE_BODIES):
                 #index = i#random.randint(0, len(self.target_movable_paths) - 1)  # for fixed object
                 if self.is_fixed_order_objects:
-                    index = i
+                    if self._num_RespawnObjects is None:
+                        index = i
+                    else:
+                        index = min(self._global_counter // self._num_RespawnObjects,  len(self.OBJ_NAME_LIST))
                 else:
                     index = random.randint(0, len(self.target_movable_paths) - 1)
                 urdf_path = self.target_movable_paths[index]
@@ -384,6 +392,7 @@ class Objects(object):
                 self.base_eulers_list.append(self.base_eulers[index])
             self._reset_counter = 0
         self._reset_counter += 1
+        self._global_counter += 1
 
         self._reset_movable_obecjts(movable_poses)
 
