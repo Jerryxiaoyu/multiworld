@@ -97,6 +97,15 @@ OBJECTS_DICT = {
 'shapenet_phone_1':     ["shapenet/04401088/611afaaa1671ac8cc56f78d9daf213b/obj.urdf",(0,0,0), [], 1],
 'shapenet_phone_2':     ["shapenet/04401088/b8555009f82af5da8c3645155d02fccc/obj.urdf",(0,0,0), [], 1],
 
+'shape_bottle_3':["shapenet/02876657/d45bf1487b41d2f630612f5c0ef21eb8/obj.urdf",(0,0,0), [], 1],
+'shape_bottle_4':["shapenet/02876657/898101350771ff942ae40d06128938a1/obj.urdf",(0,0,0), [], 1],
+'shape_bottle_5':["shapenet/02876657/91235f7d65aec958ca972daa503b3095/obj.urdf",(0,0,0), [], 1],
+'shape_bottle_6':["shapenet/02876657/6b8b2cb01c376064c8724d5673a063a6/obj.urdf",(0,0,0), [], 1],
+'shape_bottle_7':["shapenet/02876657/547fa0085800c5c3846564a8a219239b/obj.urdf",(0,0,0), [], 1],
+
+'phone_1':["shapenet/04401088/78855e0d8d27f00b42e82e1724e35ca/obj.urdf",(0,0,0), [], 1],
+'phone_2':["shapenet/04401088/401d5604ebfb4b43a7d4c094203303b1/obj.urdf",(0,0,0), [], 1],
+
 
 
 'blk_2':     ["blocks/train/blk2/obj.urdf",(0,0,0), [], 1],

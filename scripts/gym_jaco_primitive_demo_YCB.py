@@ -29,7 +29,7 @@ is_render_object_pose=True,
 #isPoseObservation = True,
                 goal_order =['x','y', 'theta'],
                 obj_name_list=[
-                                'blocks',
+                                'x_1',
                                # 'mustard_bottle',
                                 #  'tomato_soup_can',
                                  # 'pudding_box',
