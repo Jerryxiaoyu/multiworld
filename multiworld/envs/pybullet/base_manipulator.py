@@ -707,6 +707,10 @@ class ManipulatorXYZEnv(BasePybulletEnv, Serializable,  metaclass=abc.ABCMeta):
                             % (self._envStepCounter* self._timeStep)
                 self.debug_ino_step = self._p.addUserDebugText(time_info, self._stepTextPosition,
                                     textColorRGB=[1, 0, 0], textSize=1.5, replaceItemUniqueId=self.debug_ino_step)
+                # time_info = 'step: %d' % self._envStepCounter
+                # self.debug_ino_step = self._p.addUserDebugText(time_info, self._stepTextPosition,
+                #                                                textColorRGB=[1, 0, 0], textSize=1.5,
+                #                                                replaceItemUniqueId=self.debug_ino_step)
 
         self._observation = self._get_obs()
 

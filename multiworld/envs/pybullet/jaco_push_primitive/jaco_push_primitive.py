@@ -362,7 +362,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         self._envStepCounter = 0
         self._envActionSteps = 0
 
-        self.plot_boundary()
+        #self.plot_boundary()
 
         if self.vis_debug:
             self.vis_plot_count += 1
@@ -503,12 +503,17 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         self._envStepCounter += 1
 
         if self._renders is True and self._envStepCounter % 100 == 0:
-            time.sleep(0.001)
-            time_info = 'step: %d' % self._envStepCounter + '  ' + 'time: %.2fs' \
-                        % (self._envStepCounter * self._timeStep) + '  ' + 'actStep: %d' % self._envActionSteps
-            self.debug_ino_step = self._p.addUserDebugText(time_info, self._stepTextPosition,
-                                                           textColorRGB=[1, 0, 0], textSize=1.5,
-                                                           replaceItemUniqueId=self.debug_ino_step)
+            # time.sleep(0.001)
+            # time_info = 'step: %d' % self._envStepCounter + '  ' + 'time: %.2fs' \
+            #             % (self._envStepCounter * self._timeStep) + '  ' + 'actStep: %d' % self._envActionSteps
+            # self.debug_ino_step = self._p.addUserDebugText(time_info, self._stepTextPosition,
+            #                                                textColorRGB=[1, 0, 0], textSize=1.5,
+            #                                                replaceItemUniqueId=self.debug_ino_step)
+            # time_info =  'Time Step: %d' % self._envActionSteps
+            # self.debug_ino_step = self._p.addUserDebugText(time_info, self._stepTextPosition,
+            #                                                textColorRGB=[1, 0, 0], textSize=1.5,
+            #                                                replaceItemUniqueId=self.debug_ino_step)
+
             if self.is_render_object_pose:
                 self.plot_goalAndObject_pose()
     def _excute_action(self, action):
