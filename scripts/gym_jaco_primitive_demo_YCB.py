@@ -18,8 +18,8 @@ env = gym.make("Jaco2PushPrimitiveOneXYEnv-v0" ,isRender=True,
                table_name = 'default',
 
                isRandomObjects=True,
-               # fixed_objects_init_pos=(0.0275144, -0.53437352, 0.040171873,  # shape (3*n,)
-               #                         ),
+                fixed_objects_init_pos=(0.0275144, -0.53437352, 0.040171873,  # shape (3*n,)
+                                        ),
                # fixed_objects_init_euler=[0, 0, 0],
 
 is_render_object_pose=True,
@@ -59,7 +59,51 @@ is_render_object_pose=True,
                 obj_euler_lower_space =(0,0, -np.pi),
                 obj_euler_upper_space=(0,0,  np.pi),
                )
+#"b_cube_m" \
+#"b_cube_w" \
+#"b_L1" \
+#"b_L2" \
+#"b_semi_column" \
+#"filled-073-c_lego_duplo" \
+#"lshapeN_1" \
+#"lshapeN_2" \
+#"lshapeN_3" \
+#"lshapeN_4" \
+#"lshapeN_5" \
+#"lshapeN_6" \
+#"lshapeN_7" \
+#"lshapeN_8" \
 
+
+#"003_cracker_box" \
+#"004_sugar_box" \
+#"006_mustard_bottle" \
+#"007_tuna_fish_can" \
+#"008_pudding_box" \
+#"009_gelatin_box" \
+#"010_potted_meat_can" \
+#"011_banana" \
+#"035_power_drill" \
+#"051_large_clamp" \
+#"071_nine_hole_peg_test" \
+#"flipped-065-a_cups" \
+
+# "shapenet_bottle_1" \
+# "shapenet_bottle_2" \
+# "shapenet_mug_1" \
+# "shapenet_mug_2" \
+# "shapenet_sofa_1" \
+# "shapenet_sofa_2" \
+# "shapenet_phone_1" \
+# "shapenet_phone_2" \
+# "shape_bottle_3" \
+# "shape_bottle_4" \
+# "shape_bottle_5" \
+# "shape_bottle_6" \
+# "shape_bottle_7" \
+# "phone_1" \
+# "phone_2" \
+#
 obs = env.reset()
 
 
@@ -67,21 +111,21 @@ print("obs:", env.observation_space )
 print("action:", env.action_space.shape)
 
 # while 1:
-#     pass
-for i in range(2000):
-    n_dim_action = env.action_space.shape[0]
-    action = env.action_space.sample() # np.zeros(n_dim_action)#
-    obs, reward, done, info = env.step(action)
-    print('state:',obs['state_observation'])
-    print('state_desired_goal:', obs['state_desired_goal'])
-
-    print(info)
-    print('--------------')
-
-    if done :
-        env.reset()
-    env.render()
-
+# #     pass
+# for i in range(2000):
+#     n_dim_action = env.action_space.shape[0]
+#     action = env.action_space.sample() # np.zeros(n_dim_action)#
+#     obs, reward, done, info = env.step(action)
+#     print('state:',obs['state_observation'])
+#     print('state_desired_goal:', obs['state_desired_goal'])
+#
+#     print(info)
+#     print('--------------')
+#
+#     if done :
+#         env.reset()
+#     env.render()
+#
 
 
 
