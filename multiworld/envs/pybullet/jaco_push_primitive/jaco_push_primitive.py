@@ -362,7 +362,7 @@ class Jaco2PushPrimitiveXY(Jaco2XYZEnv,   MultitaskEnv):
         self._envStepCounter = 0
         self._envActionSteps = 0
 
-        #self.plot_boundary()
+        self.plot_boundary()
 
         if self.vis_debug:
             self.vis_plot_count += 1
