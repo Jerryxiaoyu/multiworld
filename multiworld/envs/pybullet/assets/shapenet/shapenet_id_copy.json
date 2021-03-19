@@ -21,6 +21,18 @@
         "large_scaling": [1.1, 1.2]
     },
 
+    "mug": {
+        "category_id": "03797390",
+        "object_id": [
+            "599e604a8265cc0a98765d8aa3638e70",
+            "b46e89995f4f9cc5161e440f04bd2a2",
+            "9c930a8a3411f069e7f67f334aa9295c",
+            "2d10421716b16580e45ef4135c266a12",
+            "71ca4fc9c8c29fa8d5abaf84513415a2"
+        ],
+        "global_scaling": [0.8, 0.9],
+        "large_scaling": [1.1, 1.2]
+    },
     "sofa": {
         "category_id": "04256520",
         "object_id": [
